@@ -200,3 +200,37 @@ input:focus, select:focus {
       .form-row { flex-direction: column; align-items: stretch; }
       .card { padding: 18px; }
 }
+
+
+                                        .game-grid {
+                                                display: grid;
+                                                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                                                gap: 14px;
+                                        }
+.game-card {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+        border: 1px solid var(--gold-dim);
+        border-radius: var(--radius-md);
+        padding: 16px;
+        text-align: left;
+        color: var(--text);
+        cursor: pointer;
+        transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.game-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--gold);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 20px rgba(242,201,76,0.25);
+}
+.game-card-swatch {
+        width: 100%;
+        height: 8px;
+        border-radius: 6px;
+}
+.game-card-icon { font-size: 28px; }
+.game-card-name { font-weight: 700; font-size: 15px; color: var(--gold-soft); }
+.game-card-tagline { font-size: 12px; color: var(--muted); line-height: 1.4; }
