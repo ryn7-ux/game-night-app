@@ -1,200 +1,160 @@
 "use client";
 import { useEffect, useState } from "react";
 import {
-        listenPlayers,
-        listenRound1,
-        setRound1Question,
-        setAnswersOpen,
-        revealRound1,
-        awardRound1Points,
-        addLeaderboardPoints,
-        clearRound1Answers,
-        resetRound1Scores,
+          listenPlayers,
+          listenRound1,
+          setRound1Question,
+          setAnswersOpen,
+          revealRound1,
+          awardRound1Points,
+          addLeaderboardPoints,
+          clearRound1Answers,
+          resetRound1Scores,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 
-const HOST_PIN = process.env.NEXT_PUBLIC_HOST_PIN || "changeme";
-
 const GAMES = [
-      {
-                id: "trivia",
-                name: "Trivia Round",
-                icon: "🧠",
-                tagline: "True/false, numeric & short-answer questions",
-                status: "live",
-                swatch: "linear-gradient(135deg, #1f56c9, #f2c94c)",
-      },
-      {
-                id: "spelling-bee",
-                name: "Spelling Bee",
-                icon: "🐝",
-                tagline: "Spell it right before time runs out",
-                status: "soon",
-                swatch: "linear-gradient(135deg, #f2c94c, #111111)",
-                theme: {
-                            bg: "linear-gradient(180deg, #f6d365 0%, #f2c94c 55%, #d4a017 100%)",
-                            fg: "#161200",
-                            accent: "#161200",
-                            border: "#161200",
-                },
-      },
-      {
-                id: "charades",
-                name: "Charades",
-                icon: "🎭",
-                tagline: "Act it out — no talking allowed",
-                status: "soon",
-                swatch: "linear-gradient(135deg, #ff6b9d, #6b5bff)",
-                theme: {
-                            bg: "linear-gradient(180deg, #2a1a4a, #12081f)",
-                            fg: "#f5e9ff",
-                            accent: "#c9a6ff",
-                            border: "rgba(201,166,255,0.4)",
-                },
-      },
-      {
-                id: "would-you-rather",
-                name: "Would You Rather",
-                icon: "🤔",
-                tagline: "Pick a side, defend your choice",
-                status: "soon",
-                swatch: "linear-gradient(135deg, #34d399, #0d2f78)",
-                theme: {
-                            bg: "linear-gradient(180deg, #0f3d2e, #051a13)",
-                            fg: "#e8fff5",
-                            accent: "#34d399",
-                            border: "rgba(52,211,153,0.4)",
-                },
-      },
-      ];
+        {
+                    id: "trivia",
+                    name: "Trivia Round",
+                    icon: "🧠",
+                    tagline: "True/false, numeric & short-answer questions",
+                    status: "live",
+                    swatch: "linear-gradient(135deg, #1f56c9, #f2c94c)",
+        },
+        {
+                    id: "spelling-bee",
+                    name: "Spelling Bee",
+                    icon: "🐝",
+                    tagline: "Spell it right before time runs out",
+                    status: "soon",
+                    swatch: "linear-gradient(135deg, #f2c94c, #111111)",
+                    theme: {
+                                  bg: "linear-gradient(180deg, #f6d365 0%, #f2c94c 55%, #d4a017 100%)",
+                                  fg: "#161200",
+                                  accent: "#161200",
+                                  border: "#161200",
+                    },
+        },
+        {
+                    id: "charades",
+                    name: "Charades",
+                    icon: "🎭",
+                    tagline: "Act it out — no talking allowed",
+                    status: "soon",
+                    swatch: "linear-gradient(135deg, #ff6b9d, #6b5bff)",
+                    theme: {
+                                  bg: "linear-gradient(180deg, #2a1a4a, #12081f)",
+                                  fg: "#f5e9ff",
+                                  accent: "#c9a6ff",
+                                  border: "rgba(201,166,255,0.4)",
+                    },
+        },
+        {
+                    id: "would-you-rather",
+                    name: "Would You Rather",
+                    icon: "🤔",
+                    tagline: "Pick a side, defend your choice",
+                    status: "soon",
+                    swatch: "linear-gradient(135deg, #34d399, #0d2f78)",
+                    theme: {
+                                  bg: "linear-gradient(180deg, #0f3d2e, #051a13)",
+                                  fg: "#e8fff5",
+                                  accent: "#34d399",
+                                  border: "rgba(52,211,153,0.4)",
+                    },
+        },
+        ];
 
 export default function HostPage() {
-        const [unlocked, setUnlocked] = useState(false);
-        const [pinInput, setPinInput] = useState("");
-
-  useEffect(() => {
-            if (sessionStorage.getItem("gamenight_host_unlocked") === "true") {
-                        setUnlocked(true);
-            }
-  }, []);
-
-  function tryUnlock(e) {
-            e.preventDefault();
-            if (pinInput === HOST_PIN) {
-                        sessionStorage.setItem("gamenight_host_unlocked", "true");
-                        setUnlocked(true);
-            } else {
-                        alert("Wrong PIN");
-            }
-  }
-
-  if (!unlocked) {
-            return (
-                        <div className="center-screen">
-                          <div className="logo-badge">🔒</div>
-                <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800 }}>Host Access</h1>
-              <form onSubmit={tryUnlock} className="form-row">
-                  <input
-                  type="password"
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value)}
-                  placeholder="Host PIN"
-                  autoFocus
-                />
-                                  <button className="btn-primary" type="submit">Unlock</button>
-                        </form>
-                        </div>
-          );
-}
-
-  return <HostControls />;
-}
+          return <HostControls />;
+                  }
 
 function HostControls() {
-        const [selectedGame, setSelectedGame] = useState(null);
-        const [players, setPlayers] = useState([]);
-        const [round1, setRound1] = useState(null);
+          const [selectedGame, setSelectedGame] = useState(null);
+          const [players, setPlayers] = useState([]);
+          const [round1, setRound1] = useState(null);
 
   const [questionText, setQuestionText] = useState("");
-        const [questionType, setQuestionType] = useState("truefalse");
-        const [correctAnswer, setCorrectAnswer] = useState("");
-        const [pointInputs, setPointInputs] = useState({});
-        const [roundFinalized, setRoundFinalized] = useState(false);
+          const [questionType, setQuestionType] = useState("truefalse");
+          const [correctAnswer, setCorrectAnswer] = useState("");
+          const [pointInputs, setPointInputs] = useState({});
+          const [roundFinalized, setRoundFinalized] = useState(false);
 
   useEffect(() => {
-            const unsubP = listenPlayers(setPlayers);
-            const unsubR = listenRound1(setRound1);
-            return () => {
-                        unsubP();
-                        unsubR();
-            };
+              const unsubP = listenPlayers(setPlayers);
+              const unsubR = listenRound1(setRound1);
+              return () => {
+                            unsubP();
+                            unsubR();
+              };
   }, []);
 
   useEffect(() => {
-            setRoundFinalized(false);
+              setRoundFinalized(false);
   }, [round1?.questionText]);
 
   async function pushQuestion() {
-            if (!questionText.trim()) return;
-            await setRound1Question({ questionText, questionType, correctAnswer });
-            setQuestionText("");
-            setCorrectAnswer("");
+              if (!questionText.trim()) return;
+              await setRound1Question({ questionText, questionType, correctAnswer });
+              setQuestionText("");
+              setCorrectAnswer("");
   }
 
   const answers = round1?.answers || {};
-        const scores = round1?.scores || {};
+          const scores = round1?.scores || {};
 
   const standings = [...players]
-          .map((p) => ({ ...p, score: scores[p.id] || 0 }))
-          .sort((a, b) => b.score - a.score)
-          .map((p, i, arr) => ({ ...p, points: arr.length - i }));
+            .map((p) => ({ ...p, score: scores[p.id] || 0 }))
+            .sort((a, b) => b.score - a.score)
+            .map((p, i, arr) => ({ ...p, points: arr.length - i }));
 
   async function finalizeRound() {
-            if (players.length === 0 || roundFinalized) return;
-            await Promise.all(standings.map((s) => addLeaderboardPoints(s.id, s.points)));
-            await resetRound1Scores();
-            setRoundFinalized(true);
+              if (players.length === 0 || roundFinalized) return;
+              await Promise.all(standings.map((s) => addLeaderboardPoints(s.id, s.points)));
+              await resetRound1Scores();
+              setRoundFinalized(true);
   }
 
   if (!selectedGame) {
-            return (
-                        <div className="page-wrap">
-                          <h1 className="page-title">🎙️ Host Control</h1>
-                <p className="page-subtitle">Pick a game to run</p>
-                <div className="card">
-                            <p className="card-label">Leaderboard (whole night)</p>
-                  <Leaderboard />
-                  </div>
-                <GamesDashboard games={GAMES} onSelect={setSelectedGame} />
-                  </div>
-            );
+              return (
+                            <div className="page-wrap">
+                              <h1 className="page-title">🎙️ Host Control</h1>
+                  <p className="page-subtitle">Pick a game to run</p>
+                  <div className="card">
+                                <p className="card-label">Leaderboard (whole night)</p>
+                    <Leaderboard />
+                      </div>
+                  <GamesDashboard games={GAMES} onSelect={setSelectedGame} />
+                      </div>
+              );
   }
 
   const game = GAMES.find((g) => g.id === selectedGame);
 
   if (game.status === "soon") {
-            return (
-                        <div className="page-wrap">
-                          <ComingSoonView game={game} onBack={() => setSelectedGame(null)} />
-        </div>
-          );
+              return (
+                            <div className="page-wrap">
+                              <ComingSoonView game={game} onBack={() => setSelectedGame(null)} />
+          </div>
+            );
 }
 
   return (
-            <div className="page-wrap">
-              <button className="btn-secondary" onClick={() => setSelectedGame(null)} style={{ marginBottom: 16 }}>
+              <div className="page-wrap">
+                <button className="btn-secondary" onClick={() => setSelectedGame(null)} style={{ marginBottom: 16 }}>
         ← Back to Games
-              </button>
+                </button>
       <h1 className="page-title">🧠 Trivia Round</h1>
       <p className="page-subtitle">Round 1</p>
 
       <div className="card">
-                      <p className="card-label">Leaderboard (whole night)</p>
+                        <p className="card-label">Leaderboard (whole night)</p>
         <Leaderboard />
-              </div>
+                </div>
 
       <div className="card">
-                      <p className="card-label">Set Question</p>
+                        <p className="card-label">Set Question</p>
         <input
           type="text"
           placeholder="Question text"
@@ -207,7 +167,7 @@ function HostControls() {
             <option value="truefalse">True / False</option>
             <option value="numeric">Numeric (closest wins)</option>
             <option value="shortanswer">Short answer</option>
-              </select>
+                </select>
           <input
             type="text"
             placeholder="Correct answer (for your reference + reveal)"
@@ -215,14 +175,14 @@ function HostControls() {
             onChange={(e) => setCorrectAnswer(e.target.value)}
             style={{ flex: 1, minWidth: 200 }}
           />
-                </div>
+                  </div>
         <button className="btn-primary" onClick={pushQuestion}>Push New Question</button>
-                </div>
+                  </div>
 
 {round1 && (
-              <>
-                <div className="card">
-                  <p className="card-label">Current Question</p>
+                <>
+                  <div className="card">
+                    <p className="card-label">Current Question</p>
              <p style={{ fontSize: 19, fontWeight: 700, marginTop: 0 }}>{round1.questionText}</p>
             <p style={{ color: "var(--muted)" }}>Correct answer: {round1.correctAnswer || "(not set)"}</p>
             <div className="form-row" style={{ justifyContent: "flex-start" }}>
@@ -230,7 +190,7 @@ function HostControls() {
               <button className="btn-bad" onClick={() => setAnswersOpen(false)}>Lock Answers</button>
               <button className="btn-primary" onClick={() => revealRound1()}>Reveal to Everyone</button>
               <button className="btn-secondary" onClick={() => clearRound1Answers()}>Reset for Next Question</button>
-      </div>
+        </div>
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <span className={`status-pill ${round1.answersOpen ? "on" : "off"}`}>
                 <span className="dot" /> Answers {round1.answersOpen ? "Open" : "Closed"}
@@ -238,18 +198,18 @@ function HostControls() {
               <span className={`status-pill ${round1.revealed ? "on" : "off"}`}>
                 <span className="dot" /> {round1.revealed ? "Revealed" : "Hidden"}
 </span>
-      </div>
-      </div>
+</div>
+        </div>
 
           <div className="card">
-                  <p className="card-label">Answers Received</p>
+                    <p className="card-label">Answers Received</p>
 {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {players.map((p) => (
-                    <div key={p.id} className="answer-row">
-                      <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                      <div key={p.id} className="answer-row">
+                        <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
                 <div style={{ flex: 2, color: answers[p.id] ? "var(--text)" : "var(--muted)" }}>
 {answers[p.id] || "no answer yet"}
-      </div>
+</div>
                 <div style={{ width: 55, textAlign: "center", fontWeight: 700 }}>{scores[p.id] || 0} pts</div>
                 <input
                   type="number"
@@ -261,31 +221,31 @@ function HostControls() {
                 <button
                   className="btn-primary"
                   onClick={() => {
-                                            const amt = parseInt(pointInputs[p.id] || "0", 10);
-                                            if (!amt) return;
-                                            awardRound1Points(p.id, amt);
-                                            setPointInputs({ ...pointInputs, [p.id]: "" });
+                                              const amt = parseInt(pointInputs[p.id] || "0", 10);
+                                              if (!amt) return;
+                                              awardRound1Points(p.id, amt);
+                                              setPointInputs({ ...pointInputs, [p.id]: "" });
                   }}
                 >
-                                          Award
-                        </button>
-                        </div>
+                                            Award
+                          </button>
+                          </div>
             ))}
-                  </div>
+                    </div>
 
           <div className="card">
-                              <p className="card-label">Round Standings</p>
+                                <p className="card-label">Round Standings</p>
             <p style={{ color: "var(--muted)", fontSize: 13, marginTop: -6 }}>
               Ranked by in-game score above. Finalizing awards leaderboard points automatically — 1st place gets {players.length || 0}, last place gets 1.
-                    </p>
+                      </p>
 {standings.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {standings.map((s, i) => (
-                    <div key={s.id} className="answer-row">
-                      <div style={{ width: 32, fontWeight: 800, color: "var(--gold)" }}>#{i + 1}</div>
+                      <div key={s.id} className="answer-row">
+                        <div style={{ width: 32, fontWeight: 800, color: "var(--gold)" }}>#{i + 1}</div>
                 <div style={{ flex: 1, fontWeight: 600 }}>{s.name}</div>
                 <div style={{ width: 110, textAlign: "center", color: "var(--muted)" }}>{s.score} round pts</div>
                 <div style={{ width: 130, textAlign: "center", fontWeight: 700, color: "var(--good)" }}>+{s.points} leaderboard</div>
-      </div>
+        </div>
             ))}
             <button
               className="btn-good"
@@ -295,20 +255,20 @@ function HostControls() {
             >
 {roundFinalized ? "✅ Points Awarded" : "🏆 Finalize Round & Award Points"}
 </button>
-      </div>
-      </>
+        </div>
+        </>
       )}
 </div>
   );
 }
 
 function GamesDashboard({ games, onSelect }) {
-        return (
-                  <div className="card">
-                    <p className="card-label">Choose a Game</p>
-            <div className="game-grid">
-        {games.map((g) => (
-                        <button key={g.id} className="game-card" onClick={() => onSelect(g.id)}>
+          return (
+                      <div className="card">
+                        <p className="card-label">Choose a Game</p>
+              <div className="game-grid">
+          {games.map((g) => (
+                            <button key={g.id} className="game-card" onClick={() => onSelect(g.id)}>
             <div className="game-card-swatch" style={{ background: g.swatch }} />
             <div className="game-card-icon">{g.icon}</div>
             <div className="game-card-name">{g.name}</div>
@@ -316,34 +276,34 @@ function GamesDashboard({ games, onSelect }) {
             <span className={`status-pill ${g.status === "live" ? "on" : "off"}`}>
               <span className="dot" /> {g.status === "live" ? "Ready to Play" : "Coming Soon"}
 </span>
-      </button>
+        </button>
         ))}
-              </div>
-              </div>
+                </div>
+                </div>
   );
-      }
+}
 
 function ComingSoonView({ game, onBack }) {
-        const t = game.theme;
-        return (
-                  <div>
-            <button className="btn-secondary" onClick={onBack} style={{ marginBottom: 16 }}>
+          const t = game.theme;
+          return (
+                      <div>
+                        <button className="btn-secondary" onClick={onBack} style={{ marginBottom: 16 }}>
         ← Back to Games
-              </button>
+                </button>
       <div
         className="card"
         style={{
-                        background: t.bg,
-                        border: `1px solid ${t.border}`,
-                        textAlign: "center",
-                        padding: 48,
+                          background: t.bg,
+                          border: `1px solid ${t.border}`,
+                          textAlign: "center",
+                          padding: 48,
         }}
       >
         <div style={{ fontSize: 56, marginBottom: 12 }}>{game.icon}</div>
         <h2 style={{ color: t.fg, textShadow: "none", margin: "0 0 8px" }}>{game.name}</h2>
         <p style={{ color: t.fg, opacity: 0.75, margin: 0 }}>{game.tagline}</p>
         <p style={{ marginTop: 24, fontWeight: 800, color: t.accent, letterSpacing: 1 }}>🚧 COMING SOON</p>
-            </div>
-            </div>
+              </div>
+              </div>
   );
 }
