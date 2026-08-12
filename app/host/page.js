@@ -235,6 +235,7 @@ function HostControls() {
 
           <div className="card">
               <p className="card-label">Answers Received</p>
+              <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>Type points in the box, then hit Award — nothing is scored automatically.</p>
 {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {players.map((p) => (
                 <div key={p.id} className="answer-row">
