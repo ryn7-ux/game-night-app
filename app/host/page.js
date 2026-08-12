@@ -11,6 +11,14 @@ import {
     clearRound1Answers,
     resetRound1Scores,
     removePlayer,
+        listenCurrentGame,
+        setCurrentGame,
+        listenSpellingBee,
+        setSpellingWord,
+        setSpellingTurn,
+        markSpellingCorrect,
+        markSpellingIncorrect,
+        resetSpellingBee,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 import Avatar from "../../components/Avatar";
@@ -29,7 +37,7 @@ const GAMES = [
         name: "Spelling Bee",
         icon: "🐝",
         tagline: "Spell it right before time runs out",
-        status: "soon",
+        status: "live",
         swatch: "linear-gradient(135deg, #f2c94c, #111111)",
         theme: {
                 bg: "linear-gradient(180deg, #f6d365 0%, #f2c94c 55%, #d4a017 100%)",
@@ -77,6 +85,8 @@ function HostControls() {
     const [players, setPlayers] = useState([]);
     const [round1, setRound1] = useState(null);
     const [confirmRemoveId, setConfirmRemoveId] = useState(null);
+        const [spellingBee, setSpellingBee] = useState(null);
+        const [spellingWordInput, setSpellingWordInput] = useState("");
 
   const [questionText, setQuestionText] = useState("");
     const [questionType, setQuestionType] = useState("truefalse");
@@ -87,9 +97,11 @@ function HostControls() {
   useEffect(() => {
         const unsubP = listenPlayers(setPlayers);
         const unsubR = listenRound1(setRound1);
+              const unsubSB = listenSpellingBee(setSpellingBee);
         return () => {
                 unsubP();
                 unsubR();
+                            unsubSB();
         };
   }, []);
 
@@ -108,6 +120,30 @@ function HostControls() {
         await removePlayer(playerId);
         setConfirmRemoveId(null);
   }
+
+      function selectGame(id) {
+              setSelectedGame(id);
+              setCurrentGame(id);
+      }
+
+      function backToGames() {
+              setSelectedGame(null);
+              setCurrentGame(null);
+      }
+
+      async function pushSpellingWord() {
+              if (!spellingWordInput.trim()) return;
+              await setSpellingWord(spellingWordInput.trim());
+              setSpellingWordInput("");
+      }
+
+      async function handleSpellingCorrect(playerId) {
+              await markSpellingCorrect(playerId);
+      }
+
+      async function handleSpellingIncorrect() {
+              await markSpellingIncorrect();
+      }
 
   const answers = round1?.answers || {};
     const scores = round1?.scores || {};
@@ -157,7 +193,7 @@ function HostControls() {
 </div>
           ))}
             </div>
-        <GamesDashboard games={GAMES} onSelect={setSelectedGame} />
+        <GamesDashboard games={GAMES} onSelect={selectGame} />
             </div>
     );
 }
@@ -167,14 +203,82 @@ function HostControls() {
   if (game.status === "soon") {
         return (
                 <div className="page-wrap">
-                  <ComingSoonView game={game} onBack={() => setSelectedGame(null)} />
+                  <ComingSoonView game={game} onBack={() => backToGames()} />
     </div>
+    );
+}
+
+  if (game.id === "spelling-bee") {
+          return (
+                    <div className="page-wrap">
+                      <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
+          ← Back to Games
+              </button>
+        <h1 className="page-title">🐝 Spelling Bee</h1>
+        <p className="page-subtitle">Say the word out loud, host judges live</p>
+
+        <div className="card">
+                        <p className="card-label">Leaderboard (whole night)</p>
+          <Leaderboard />
+              </div>
+
+        <div className="card">
+                        <p className="card-label">Set Word</p>
+          <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
+            Type the word for your own reference and read it out loud - players never see it typed here.
+                </p>
+          <div className="form-row" style={{ justifyContent: "flex-start" }}>
+            <input
+              type="text"
+              placeholder="Word to spell"
+              value={spellingWordInput}
+              onChange={(e) => setSpellingWordInput(e.target.value)}
+              style={{ flex: 1, minWidth: 200 }}
+            />
+            <button className="btn-primary" onClick={pushSpellingWord}>Set Word</button>
+                </div>
+{spellingBee?.word && (
+                <p style={{ marginTop: 10 }}>
+              Current word: <strong>{spellingBee.word}</strong>
+                  </p>
+          )}
+              </div>
+
+        <div className="card">
+                        <p className="card-label">Whose Turn</p>
+{players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
+{players.map((p) => (
+                <div key={p.id} className="answer-row">
+                  <Avatar avatarId={p.avatarId} size="sm" />
+                  <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+{spellingBee?.currentPlayerId === p.id ? (
+                    <span className="status-pill on"><span className="dot" /> Up now</span>
+                  ) : (
+                    <button className="btn-secondary" onClick={() => setSpellingTurn(p.id)}>Give Turn</button>
+              )}
+                  </div>
+          ))}
+              </div>
+
+{spellingBee?.currentPlayerId && (
+              <div className="card">
+                <p className="card-label">Judge the Attempt</p>
+             <p style={{ color: "var(--muted)" }}>
+{players.find((p) => p.id === spellingBee.currentPlayerId)?.name || "Player"} is spelling - did they get it right?
+    </p>
+            <div className="form-row" style={{ justifyContent: "flex-start" }}>
+              <button className="btn-good" onClick={() => handleSpellingCorrect(spellingBee.currentPlayerId)}>✓ Correct (+1)</button>
+              <button className="btn-bad" onClick={() => handleSpellingIncorrect()}>✗ Incorrect</button>
+    </div>
+    </div>
+        )}
+            </div>
     );
 }
 
   return (
         <div className="page-wrap">
-          <button className="btn-secondary" onClick={() => setSelectedGame(null)} style={{ marginBottom: 16 }}>
+          <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
         ← Back to Games
           </button>
       <h1 className="page-title">🧠 Trivia Round</h1>
