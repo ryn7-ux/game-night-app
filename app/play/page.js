@@ -6,6 +6,9 @@ import {
       listenRound1,
       submitRound1Answer,
       listenSelfPlayer,
+        listenCurrentGame,
+        listenSpellingBee,
+        listenPlayers,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 
@@ -17,6 +20,9 @@ export default function PlayPage() {
       const [removed, setRemoved] = useState(false);
       const sawSelfRef = useRef(false);
       const router = useRouter();
+        const [currentGame, setCurrentGameState] = useState(null);
+        const [spellingBee, setSpellingBeeState] = useState(null);
+        const [players, setPlayers] = useState([]);
 
   useEffect(() => {
           const id = getPlayerId();
@@ -26,6 +32,9 @@ export default function PlayPage() {
           }
           setPlayerId(id);
           const unsub = listenRound1(setRound1);
+            const unsubCG = listenCurrentGame(setCurrentGameState);
+            const unsubSB = listenSpellingBee(setSpellingBeeState);
+            const unsubP = listenPlayers(setPlayers);
           const unsubSelf = listenSelfPlayer(id, (exists) => {
                     if (exists) {
                                 sawSelfRef.current = true;
@@ -35,6 +44,9 @@ export default function PlayPage() {
           });
           return () => {
                     unsub();
+                      unsubCG();
+                      unsubSB();
+                      unsubP();
                     unsubSelf();
           };
   }, []);
@@ -75,9 +87,9 @@ export default function PlayPage() {
         <Leaderboard />
       </div>
 
-{!round1 && <h2 style={{ color: "var(--muted)" }}>Waiting for the host to start...</h2>}
+{!currentGame && <h2 style={{ color: "var(--muted)" }}>Waiting for the host to start...</h2>}
 
-{round1 && (
+{currentGame === "trivia" && round1 && (
             <div className="card" style={{ maxWidth: 500, width: "100%" }}>
           <h2 style={{ marginTop: 0 }}>{round1.questionText}</h2>
 
@@ -113,6 +125,21 @@ export default function PlayPage() {
           )}
                     </div>
           )}
+
+{currentGame === "spelling-bee" && (
+              <div className="card" style={{ maxWidth: 500, width: "100%" }}>
+                <h2 style={{ marginTop: 0 }}>🐝 Spelling Bee</h2>
+{spellingBee?.currentPlayerId === playerId ? (
+                  <p style={{ color: "var(--good)", fontSize: 20, fontWeight: 700 }}>🎤 Your turn! Spell it out loud.</p>
+                ) : spellingBee?.currentPlayerId ? (
+                                  <p style={{ color: "var(--muted)" }}>
+                {(players.find((p) => p.id === spellingBee.currentPlayerId) || {}).name || "Someone"}'s turn - listen up!
+                      </p>
+                                ) : (
+                                                  <p style={{ color: "var(--muted)" }}>Waiting for the host to call the next player...</p>
+                                                )}
+                                      </div>
+                                            )}
 </div>
                           );
 }
