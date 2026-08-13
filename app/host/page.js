@@ -464,50 +464,49 @@ function HostControls() {
     );
 }
 
-  if (game.id === "know-your-partner") {
+if (game.id === "know-your-partner") {
           const pairs = partnerGame?.pairs || {};
           const pgAnswers = partnerGame?.answers || {};
-        const nameOf = (id) => players.find((p) => p.id === id)?.name || "?";
-          const norm = (s) => (s || "").trim().toLowerCase();
+          const nameOf = (id) => players.find((p) => p.id === id)?.name || "?";
           return (
-                    <div className="page-wrap">
-                      <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
+                      <div className="page-wrap">
+                        <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
           ← Back to Games
-              </button>
+                </button>
         <h1 className="page-title">💞 Know Your Partner</h1>
-        <p className="page-subtitle">Answer for yourself, then guess your partner's answer - match it for a point</p>
+        <p className="page-subtitle">Answer for yourself, then guess your partner's answer - you decide if it's a match</p>
 
         <div className="card">
-                        <p className="card-label">Leaderboard (whole night)</p>
+                          <p className="card-label">Leaderboard (whole night)</p>
           <Leaderboard />
-              </div>
+                </div>
 
         <div className="card">
-                        <p className="card-label">Set Up Pairs</p>
+                          <p className="card-label">Set Up Pairs</p>
           <div className="form-row" style={{ justifyContent: "flex-start", marginBottom: 10 }}>
             <select value={pairPlayerA} onChange={(e) => setPairPlayerA(e.target.value)}>
               <option value="">Partner A</option>
 {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-    </select>
+      </select>
             <select value={pairPlayerB} onChange={(e) => setPairPlayerB(e.target.value)}>
               <option value="">Partner B</option>
 {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-    </select>
+      </select>
             <button className="btn-primary" onClick={handleAddPair}>Add Pair</button>
-    </div>
+      </div>
 {Object.entries(pairs).map(([pairId, pair]) => (
-                <div key={pairId} className="answer-row">
-                  <div style={{ flex: 1, fontWeight: 600 }}>{nameOf(pair.a)} + {nameOf(pair.b)}</div>
+                  <div key={pairId} className="answer-row">
+                    <div style={{ flex: 1, fontWeight: 600 }}>{nameOf(pair.a)} + {nameOf(pair.b)}</div>
               <button className="btn-bad" onClick={() => removePartnerPair(pairId)}>Remove</button>
-    </div>
+      </div>
           ))}
-              </div>
+                </div>
 
         <div className="card">
-          <p className="card-label">Set Question</p>
+                          <p className="card-label">Set Question</p>
           <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
             e.g. "What's your dream destination?" - each partner answers for themselves AND guesses their partner's answer.
-                </p>
+                  </p>
           <div className="form-row" style={{ justifyContent: "flex-start" }}>
             <input
               type="text"
@@ -517,41 +516,46 @@ function HostControls() {
               style={{ flex: 1, minWidth: 200 }}
             />
             <button className="btn-primary" onClick={pushPartnerQuestion}>Push Question</button>
-                </div>
-                </div>
+                  </div>
+                  </div>
 
 {partnerGame?.questionText && (
-              <div className="card">
-                <p className="card-label">Current Question</p>
+                <div className="card">
+                  <p className="card-label">Current Question</p>
              <p style={{ fontSize: 19, fontWeight: 700, marginTop: 0 }}>{partnerGame.questionText}</p>
             <button className="btn-primary" onClick={() => revealPartnerAnswers()} style={{ marginBottom: 14 }}>
-              Reveal &amp; Auto-Score
-                  </button>
+              Reveal Answers
+                    </button>
+            <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -8, marginBottom: 14 }}>
+              You decide if each guess counts (e.g. "Paris" for "France" still counts) - hit Match to award the point.
+                    </p>
 {Object.entries(pairs).map(([pairId, pair]) => {
-                  const aAns = pgAnswers[pair.a] || {};
-                  const bAns = pgAnswers[pair.b] || {};
-                  const aMatched = partnerGame.revealed && norm(aAns.guess) && norm(aAns.guess) === norm(bAns.own);
-                  const bMatched = partnerGame.revealed && norm(bAns.guess) && norm(bAns.guess) === norm(aAns.own);
-                  return (
-                                      <div key={pairId} style={{ marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--border, #333)" }}>
+                    const aAns = pgAnswers[pair.a] || {};
+                    const bAns = pgAnswers[pair.b] || {};
+                    return (
+                                          <div key={pairId} style={{ marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--border, #333)" }}>
                                              <div style={{ fontWeight: 700, marginBottom: 6 }}>{nameOf(pair.a)} + {nameOf(pair.b)}</div>
 {!partnerGame.revealed ? (
-                        <p style={{ color: "var(--muted)", margin: 0 }}>
+                          <p style={{ color: "var(--muted)", margin: 0 }}>
 {nameOf(pair.a)}: {aAns.own && aAns.guess ? "answered" : "waiting"} · {nameOf(pair.b)}: {bAns.own && bAns.guess ? "answered" : "waiting"}
 </p>
                   ) : (
-                                          <>
-                                            <p style={{ margin: "2px 0" }}>
-{nameOf(pair.a)} said "{aAns.own || "-"}", guessed partner said "{aAns.guess || "-"}"
-{aMatched && <span style={{ color: "var(--good)", fontWeight: 700 }}> ✓ +1</span>}
-    </p>
-                      <p style={{ margin: "2px 0" }}>
-{nameOf(pair.b)} said "{bAns.own || "-"}", guessed partner said "{bAns.guess || "-"}"
-{bMatched && <span style={{ color: "var(--good)", fontWeight: 700 }}> ✓ +1</span>}
-    </p>
-    </>
+                                            <>
+                                              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+                        <p style={{ margin: 0, flex: 1 }}>
+{nameOf(pair.a)} said "{aAns.own || "-"}", guessed "{aAns.guess || "-"}"
+      </p>
+                        <button className="btn-good" onClick={() => addLeaderboardPoints(pair.a, 1)}>Match ✓ +1</button>
+      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+                        <p style={{ margin: 0, flex: 1 }}>
+{nameOf(pair.b)} said "{bAns.own || "-"}", guessed "{bAns.guess || "-"}"
+      </p>
+                        <button className="btn-good" onClick={() => addLeaderboardPoints(pair.b, 1)}>Match ✓ +1</button>
+      </div>
+      </>
                   )}
-</div>
+                        </div>
               );
 })}
 </div>
