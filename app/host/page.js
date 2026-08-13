@@ -545,13 +545,15 @@ if (game.id === "know-your-partner") {
                         <p style={{ margin: 0, flex: 1 }}>
 {nameOf(pair.a)} said "{aAns.own || "-"}", guessed "{aAns.guess || "-"}"
       </p>
-                        <button className="btn-good" onClick={() => { addLeaderboardPoints(pair.a, 1); addLeaderboardPoints(pair.b, 1); }}>Match ✓ +1</button>
+                        <button className="btn-good" onClick={() => { addLeaderboardPoints(pair.a, 1); addLeaderboardPoints(pair.b, 1); }}>Match ✓</button>
+                              <button className="btn-bad">No Match</button>
       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
                         <p style={{ margin: 0, flex: 1 }}>
 {nameOf(pair.b)} said "{bAns.own || "-"}", guessed "{bAns.guess || "-"}"
       </p>
-                        <button className="btn-good" onClick={() => { addLeaderboardPoints(pair.a, 1); addLeaderboardPoints(pair.b, 1); }}>Match ✓ +1</button>
+                        <button className="btn-good" onClick={() => { addLeaderboardPoints(pair.a, 1); addLeaderboardPoints(pair.b, 1); }}>Match ✓</button>
+                              <button className="btn-bad">No Match</button>
       </div>
       </>
                   )}
