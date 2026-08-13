@@ -1,344 +1,421 @@
 "use client";
 import { useEffect, useState } from "react";
 import {
-      listenPlayers,
-      listenRound1,
-      setRound1Question,
-      setAnswersOpen,
-      revealRound1,
-      awardRound1Points,
-      addLeaderboardPoints,
-      clearRound1Answers,
-      resetRound1Scores,
-      removePlayer,
-      listenCurrentGame,
-      setCurrentGame,
-      listenSpellingBee,
-      setSpellingWord,
-      setSpellingTurn,
-      markSpellingCorrect,
-      markSpellingIncorrect,
-      resetSpellingBee,
-      listenKnowHost,
-      setKnowHostQuestion,
-      setKnowHostAnswersOpen,
-      revealKnowHost,
-      awardKnowHostPoint,
-      clearKnowHostAnswers,
-      listenPartnerGame,
-      addPartnerPair,
-      removePartnerPair,
-      setPartnerQuestion,
-      revealPartnerAnswers,
-      awardPartnerMatch,
-      listenTeamGame,
-      setPlayerTeam,
-      setTeamName,
-      setTeamPrompt,
-      revealTeamPrompt,
-      awardTeamPoints,
-      resetTeamScores,
-      listenGuessPhoto,
-      startGuessPhoto,
-      setGuessPhotoBlur,
-      revealGuessPhoto,
-      listenWhoSent,
-      setWhoSentImage,
-      revealWhoSent,
+        listenPlayers,
+        listenRound1,
+        setRound1Question,
+        setAnswersOpen,
+        revealRound1,
+        awardRound1Points,
+        addLeaderboardPoints,
+        clearRound1Answers,
+        resetRound1Scores,
+        removePlayer,
+        listenCurrentGame,
+        setCurrentGame,
+        listenSpellingBee,
+        setSpellingWord,
+        setSpellingTurn,
+        markSpellingCorrect,
+        markSpellingIncorrect,
+        resetSpellingBee,
+        listenKnowHost,
+        setKnowHostQuestion,
+        setKnowHostAnswersOpen,
+        revealKnowHost,
+        awardKnowHostPoint,
+        clearKnowHostAnswers,
+        listenPartnerGame,
+        addPartnerPair,
+        removePartnerPair,
+        setPartnerQuestion,
+        revealPartnerAnswers,
+        awardPartnerMatch,
+        listenTeamGame,
+        setPlayerTeam,
+        setTeamName,
+        setTeamPrompt,
+        revealTeamPrompt,
+        awardTeamPoints,
+        resetTeamScores,
+        listenGuessPhoto,
+        startGuessPhoto,
+        setGuessPhotoBlur,
+        revealGuessPhoto,
+        listenWhoSent,
+        setWhoSentImage,
+        revealWhoSent,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 import Avatar from "../../components/Avatar";
 import { AVATARS } from "../../lib/avatars";
 
 const GAMES = [
-    {
-            id: "trivia",
-            name: "Trivia Round",
-            icon: "🧠",
-            tagline: "True/false, numeric & short-answer questions",
-            status: "live",
-            swatch: "linear-gradient(135deg, #1f56c9, #f2c94c)",
-    },
-    {
-            id: "spelling-bee",
-            name: "Spelling Bee",
-            icon: "🐝",
-            tagline: "Spell it right before time runs out",
-            status: "live",
-            swatch: "linear-gradient(135deg, #f2c94c, #111111)",
-            theme: {
-                      bg: "linear-gradient(180deg, #f6d365 0%, #f2c94c 55%, #d4a017 100%)",
-                      fg: "#161200",
-                      accent: "#161200",
-                      border: "#161200",
-            },
-    },
-    {
-            id: "know-your-host",
-            name: "Know Your Host",
-            icon: "🎙️",
-            tagline: "How well do they really know you?",
-            status: "live",
-            swatch: "linear-gradient(135deg, #ff6b9d, #6b5bff)",
-    },
-    {
-            id: "know-your-partner",
-            name: "Know Your Partner",
-            icon: "💞",
-            tagline: "Type it together, match for a point",
-            status: "live",
-            swatch: "linear-gradient(135deg, #f472b6, #7c3aed)",
-    },
-    {
-            id: "guess-the-real-place",
-            name: "Guess the Real Place",
-            icon: "🗺️",
-            tagline: "Team battle - trust your gut",
-            status: "live",
-            swatch: "linear-gradient(135deg, #34d399, #0d2f78)",
-    },
-    {
-            id: "guess-the-photo",
-            name: "Guess the Photo",
-            icon: "📸",
-            tagline: "Zoomed in - guess who it is",
-            status: "live",
-            swatch: "linear-gradient(135deg, #fbbf24, #1f2937)",
-    },
-    {
-            id: "who-sent-this",
-            name: "Who Sent This?",
-            icon: "🕵️",
-            tagline: "Guess who sent the pic",
-            status: "live",
-            swatch: "linear-gradient(135deg, #60a5fa, #111111)",
-    },
-    ];
+      {
+                id: "trivia",
+                name: "Trivia Round",
+                icon: "🧠",
+                tagline: "True/false, numeric & short-answer questions",
+                status: "live",
+                swatch: "linear-gradient(135deg, #1f56c9, #f2c94c)",
+      },
+      {
+                id: "spelling-bee",
+                name: "Spelling Bee",
+                icon: "🐝",
+                tagline: "Spell it right before time runs out",
+                status: "live",
+                swatch: "linear-gradient(135deg, #f2c94c, #111111)",
+                theme: {
+                            bg: "linear-gradient(180deg, #f6d365 0%, #f2c94c 55%, #d4a017 100%)",
+                            fg: "#161200",
+                            accent: "#161200",
+                            border: "#161200",
+                },
+      },
+      {
+                id: "know-your-host",
+                name: "Know Your Host",
+                icon: "🎙️",
+                tagline: "How well do they really know you?",
+                status: "live",
+                swatch: "linear-gradient(135deg, #ff6b9d, #6b5bff)",
+      },
+      {
+                id: "know-your-partner",
+                name: "Know Your Partner",
+                icon: "💞",
+                tagline: "Type it together, match for a point",
+                status: "live",
+                swatch: "linear-gradient(135deg, #f472b6, #7c3aed)",
+      },
+      {
+                id: "guess-the-real-place",
+                name: "Guess the Real Place",
+                icon: "🗺️",
+                tagline: "Team battle - trust your gut",
+                status: "live",
+                swatch: "linear-gradient(135deg, #34d399, #0d2f78)",
+      },
+      {
+                id: "guess-the-photo",
+                name: "Guess the Photo",
+                icon: "📸",
+                tagline: "Zoomed in - guess who it is",
+                status: "live",
+                swatch: "linear-gradient(135deg, #fbbf24, #1f2937)",
+      },
+      {
+                id: "who-sent-this",
+                name: "Who Sent This?",
+                icon: "🕵️",
+                tagline: "Guess who sent the pic",
+                status: "live",
+                swatch: "linear-gradient(135deg, #60a5fa, #111111)",
+      },
+      ];
+
+const PARTNER_QUESTIONS = [
+        "What's your favorite food, and what do you think your partner's favorite food is?",
+        "What's your dream destination, and what do you think your partner's dream destination is?",
+        "What's your go-to comfort movie or show, and what do you think your partner's is?",
+        "What's your biggest pet peeve, and what do you think your partner's is?",
+        "What's your favorite way to spend a lazy Sunday, and what do you think your partner's is?",
+        "What would be your last meal ever, and what do you think your partner's would be?",
+        "What's your guilty pleasure snack, and what do you think your partner's is?",
+        "What's your favorite season, and what do you think your partner's is?",
+        "What's one thing on your bucket list, and what do you think is on your partner's?",
+        "What's your go-to karaoke song, and what do you think your partner's is?",
+        "If you won the lottery, what would your first purchase be, and what do you think your partner's would be?",
+      ];
 
 export default function HostPage() {
-      return <HostControls />;
-          }
+        return <HostControls />;
+              }
 
 function HostControls() {
-      const [selectedGame, setSelectedGame] = useState(null);
-      const [players, setPlayers] = useState([]);
-      const [round1, setRound1] = useState(null);
-      const [confirmRemoveId, setConfirmRemoveId] = useState(null);
-      const [spellingBee, setSpellingBee] = useState(null);
-      const [spellingWordInput, setSpellingWordInput] = useState("");
+        const [selectedGame, setSelectedGame] = useState(null);
+        const [players, setPlayers] = useState([]);
+        const [round1, setRound1] = useState(null);
+        const [confirmRemoveId, setConfirmRemoveId] = useState(null);
+        const [spellingBee, setSpellingBee] = useState(null);
+        const [spellingWordInput, setSpellingWordInput] = useState("");
 
   const [questionText, setQuestionText] = useState("");
-      const [questionType, setQuestionType] = useState("truefalse");
-      const [correctAnswer, setCorrectAnswer] = useState("");
-      const [pointInputs, setPointInputs] = useState({});
-      const [roundFinalized, setRoundFinalized] = useState(false);
+        const [questionType, setQuestionType] = useState("truefalse");
+        const [correctAnswer, setCorrectAnswer] = useState("");
+        const [pointInputs, setPointInputs] = useState({});
+        const [roundFinalized, setRoundFinalized] = useState(false);
 
   const [knowHost, setKnowHost] = useState(null);
-      const [knowHostQuestionText, setKnowHostQuestionText] = useState("");
-      const [knowHostAnswerInput, setKnowHostAnswerInput] = useState("");
+        const [knowHostQuestionText, setKnowHostQuestionText] = useState("");
+        const [knowHostAnswerInput, setKnowHostAnswerInput] = useState("");
 
   const [partnerGame, setPartnerGame] = useState(null);
-      const [partnerQuestionInput, setPartnerQuestionInput] = useState("");
-      const [pairPlayerA, setPairPlayerA] = useState("");
-      const [pairPlayerB, setPairPlayerB] = useState("");
+        const [partnerQuestionInput, setPartnerQuestionInput] = useState("");
+        const [partnerQIndex, setPartnerQIndex] = useState(0);
+        const [pairPlayerA, setPairPlayerA] = useState("");
+        const [pairPlayerB, setPairPlayerB] = useState("");
 
   const [teamGame, setTeamGame] = useState(null);
-      const [teamPromptInput, setTeamPromptInput] = useState("");
-      const [teamNameAInput, setTeamNameAInput] = useState("");
-      const [teamNameBInput, setTeamNameBInput] = useState("");
+        const [teamPromptInput, setTeamPromptInput] = useState("");
+        const [teamNameAInput, setTeamNameAInput] = useState("");
+        const [teamNameBInput, setTeamNameBInput] = useState("");
 
   const [guessPhoto, setGuessPhoto] = useState(null);
-      const [guessPhotoAvatarId, setGuessPhotoAvatarId] = useState("");
+        const [guessPhotoAvatarId, setGuessPhotoAvatarId] = useState("");
 
   const [whoSent, setWhoSent] = useState(null);
-      const [whoSentImageUrl, setWhoSentImageUrl] = useState("");
-      const [whoSentSenderId, setWhoSentSenderId] = useState("");
+        const [whoSentImageUrl, setWhoSentImageUrl] = useState("");
+        const [whoSentSenderId, setWhoSentSenderId] = useState("");
+
+  const [showPlayerView, setShowPlayerView] = useState(false);
+
+  const playerViewWidget = (
+            <div style={{ position: "fixed", bottom: 16, right: 16, zIndex: 200 }}>
+{showPlayerView ? (
+              <div
+                style={{
+                  width: 340,
+                  maxWidth: "90vw",
+                  background: "#0b1230",
+                  border: "1px solid #333",
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
+}}
+        >
+          <div
+            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "8px 12px",
+                                background: "#161c3d",
+            }}
+          >
+            <span style={{ fontWeight: 700, fontSize: 13 }}>👀 Player View</span>
+            <button
+              className="btn-secondary"
+              onClick={() => setShowPlayerView(false)}
+              style={{ padding: "2px 10px", fontSize: 12 }}
+            >
+              Close
+                    </button>
+                    </div>
+          <iframe
+            src="/play?spectator=1"
+            style={{ width: "100%", height: 480, border: "none", background: "#05070f" }}
+          />
+                </div>
+      ) : (
+                    <button
+          className="btn-primary"
+          onClick={() => setShowPlayerView(true)}
+          style={{ borderRadius: 999, padding: "10px 18px" }}
+        >
+          👀 Player View
+                </button>
+      )}
+</div>
+  );
 
   useEffect(() => {
-          const unsubP = listenPlayers(setPlayers);
-          const unsubR = listenRound1(setRound1);
-          const unsubSB = listenSpellingBee(setSpellingBee);
-          const unsubKH = listenKnowHost(setKnowHost);
-          const unsubPG = listenPartnerGame(setPartnerGame);
-          const unsubTG = listenTeamGame(setTeamGame);
-          const unsubGP = listenGuessPhoto(setGuessPhoto);
-          const unsubWS = listenWhoSent(setWhoSent);
-          return () => {
-                    unsubP();
-                    unsubR();
-                    unsubSB();
-                    unsubKH();
-                    unsubPG();
-                    unsubTG();
-                    unsubGP();
-                    unsubWS();
-          };
+            const unsubP = listenPlayers(setPlayers);
+            const unsubR = listenRound1(setRound1);
+            const unsubSB = listenSpellingBee(setSpellingBee);
+            const unsubKH = listenKnowHost(setKnowHost);
+            const unsubPG = listenPartnerGame(setPartnerGame);
+            const unsubTG = listenTeamGame(setTeamGame);
+            const unsubGP = listenGuessPhoto(setGuessPhoto);
+            const unsubWS = listenWhoSent(setWhoSent);
+            return () => {
+                        unsubP();
+                        unsubR();
+                        unsubSB();
+                        unsubKH();
+                        unsubPG();
+                        unsubTG();
+                        unsubGP();
+                        unsubWS();
+            };
   }, []);
 
   useEffect(() => {
-          setRoundFinalized(false);
+            setRoundFinalized(false);
   }, [round1?.questionText]);
 
   async function pushQuestion() {
-          if (!questionText.trim()) return;
-          await setRound1Question({ questionText, questionType, correctAnswer });
-          setQuestionText("");
-          setCorrectAnswer("");
+            if (!questionText.trim()) return;
+            await setRound1Question({ questionText, questionType, correctAnswer });
+            setQuestionText("");
+            setCorrectAnswer("");
   }
 
   async function handleRemovePlayer(playerId) {
-          await removePlayer(playerId);
-          setConfirmRemoveId(null);
+            await removePlayer(playerId);
+            setConfirmRemoveId(null);
   }
 
   function selectGame(id) {
-          setSelectedGame(id);
-          setCurrentGame(id);
+            setSelectedGame(id);
+            setCurrentGame(id);
   }
 
   function backToGames() {
-          setSelectedGame(null);
-          setCurrentGame(null);
+            setSelectedGame(null);
+            setCurrentGame(null);
   }
 
   async function pushSpellingWord() {
-          if (!spellingWordInput.trim()) return;
-          await setSpellingWord(spellingWordInput.trim());
-          setSpellingWordInput("");
+            if (!spellingWordInput.trim()) return;
+            await setSpellingWord(spellingWordInput.trim());
+            setSpellingWordInput("");
   }
 
   async function handleSpellingCorrect(playerId) {
-          await markSpellingCorrect(playerId);
+            await markSpellingCorrect(playerId);
   }
 
   async function handleSpellingIncorrect() {
-          await markSpellingIncorrect();
+            await markSpellingIncorrect();
   }
 
   async function pushKnowHostQuestion() {
-          if (!knowHostQuestionText.trim()) return;
-          await setKnowHostQuestion({
-                    questionText: knowHostQuestionText.trim(),
-                    correctAnswer: knowHostAnswerInput.trim(),
-          });
-          setKnowHostQuestionText("");
-          setKnowHostAnswerInput("");
+            if (!knowHostQuestionText.trim()) return;
+            await setKnowHostQuestion({
+                        questionText: knowHostQuestionText.trim(),
+                        correctAnswer: knowHostAnswerInput.trim(),
+            });
+            setKnowHostQuestionText("");
+            setKnowHostAnswerInput("");
   }
 
   async function handleAddPair() {
-          if (!pairPlayerA || !pairPlayerB || pairPlayerA === pairPlayerB) return;
-          await addPartnerPair(pairPlayerA, pairPlayerB);
-          setPairPlayerA("");
-          setPairPlayerB("");
+            if (!pairPlayerA || !pairPlayerB || pairPlayerA === pairPlayerB) return;
+            await addPartnerPair(pairPlayerA, pairPlayerB);
+            setPairPlayerA("");
+            setPairPlayerB("");
   }
 
   async function pushPartnerQuestion() {
-          if (!partnerQuestionInput.trim()) return;
-          await setPartnerQuestion(partnerQuestionInput.trim());
-          setPartnerQuestionInput("");
+            if (!partnerQuestionInput.trim()) return;
+            await setPartnerQuestion(partnerQuestionInput.trim());
+            setPartnerQuestionInput("");
+  }
+
+  async function pushPresetPartnerQuestion() {
+            await setPartnerQuestion(PARTNER_QUESTIONS[partnerQIndex]);
+  }
+
+  function nextPartnerQuestion() {
+            setPartnerQIndex((i) => Math.min(i + 1, PARTNER_QUESTIONS.length - 1));
   }
 
   async function pushTeamPrompt() {
-          if (!teamPromptInput.trim()) return;
-          await setTeamPrompt(teamPromptInput.trim());
-          setTeamPromptInput("");
+            if (!teamPromptInput.trim()) return;
+            await setTeamPrompt(teamPromptInput.trim());
+            setTeamPromptInput("");
   }
 
   async function startPhotoRound() {
-          if (!guessPhotoAvatarId) return;
-          const avatar = AVATARS.find((a) => a.id === guessPhotoAvatarId);
-          await startGuessPhoto(guessPhotoAvatarId, avatar ? avatar.name : "");
+            if (!guessPhotoAvatarId) return;
+            const avatar = AVATARS.find((a) => a.id === guessPhotoAvatarId);
+            await startGuessPhoto(guessPhotoAvatarId, avatar ? avatar.name : "");
   }
 
   async function pushWhoSentImage() {
-          if (!whoSentImageUrl.trim() || !whoSentSenderId) return;
-          await setWhoSentImage(whoSentImageUrl.trim(), whoSentSenderId);
-          setWhoSentImageUrl("");
-          setWhoSentSenderId("");
+            if (!whoSentImageUrl.trim() || !whoSentSenderId) return;
+            await setWhoSentImage(whoSentImageUrl.trim(), whoSentSenderId);
+            setWhoSentImageUrl("");
+            setWhoSentSenderId("");
   }
 
   const answers = round1?.answers || {};
-      const scores = round1?.scores || {};
+  const scores = round1?.scores || {};
 
   const standings = [...players]
-        .map((p) => ({ ...p, score: scores[p.id] || 0 }))
-        .sort((a, b) => b.score - a.score)
-        .map((p, i, arr) => ({ ...p, points: arr.length - i }));
+    .map((p) => ({ ...p, score: scores[p.id] || 0 }))
+    .sort((a, b) => b.score - a.score)
+    .map((p, i, arr) => ({ ...p, points: arr.length - i }));
 
   async function finalizeRound() {
-          if (players.length === 0 || roundFinalized) return;
-          await Promise.all(standings.map((s) => addLeaderboardPoints(s.id, s.points)));
-          await resetRound1Scores();
-          setRoundFinalized(true);
+            if (players.length === 0 || roundFinalized) return;
+            await Promise.all(standings.map((s) => addLeaderboardPoints(s.id, s.points)));
+            await resetRound1Scores();
+            setRoundFinalized(true);
   }
 
   if (!selectedGame) {
-          return (
-                    <div className="page-wrap">
-                      <h1 className="page-title">🎙️ Host Control</h1>
-              <p className="page-subtitle">Pick a game to run</p>
-              <div className="card">
-                        <p className="card-label">Leaderboard (whole night)</p>
-                <Leaderboard />
-              </div>
-              <div className="card">
-                        <p className="card-label">Players Joined ({players.length})</p>
-      {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
-      {players.map((p) => (
-                      <div key={p.id} className="answer-row">
-                        <Avatar avatarId={p.avatarId} size="sm" />
-                    <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+            return (
+                        <div className="page-wrap">
+            {playerViewWidget}
+                <h1 className="page-title">🎙️ Host Control</h1>
+                <p className="page-subtitle">Pick a game to run</p>
+                <div className="card">
+                            <p className="card-label">Leaderboard (whole night)</p>
+                  <Leaderboard />
+                  </div>
+                <div className="card">
+                            <p className="card-label">Players Joined ({players.length})</p>
+        {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
+        {players.map((p) => (
+                          <div key={p.id} className="answer-row">
+                            <Avatar avatarId={p.avatarId} size="sm" />
+                      <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
 {confirmRemoveId === p.id ? (
-                    <div className="form-row" style={{ justifyContent: "flex-end" }}>
+                      <div className="form-row" style={{ justifyContent: "flex-end" }}>
                   <span style={{ color: "var(--muted)", fontSize: 13, alignSelf: "center" }}>Remove {p.name}?</span>
                   <button className="btn-bad" onClick={() => handleRemovePlayer(p.id)}>Confirm</button>
                   <button className="btn-secondary" onClick={() => setConfirmRemoveId(null)}>Cancel</button>
-    </div>
+      </div>
               ) : (
-                                  <button
-                                    className="btn-bad"
-                                    onClick={() => setConfirmRemoveId(p.id)}
+                                    <button
+                                      className="btn-bad"
+                                      onClick={() => setConfirmRemoveId(p.id)}
                 >
                   Remove
-                      </button>
+                        </button>
               )}
 </div>
           ))}
-              </div>
+                </div>
         <GamesDashboard games={GAMES} onSelect={selectGame} />
-              </div>
+                </div>
     );
 }
 
   const game = GAMES.find((g) => g.id === selectedGame);
 
   if (game.status === "soon") {
-          return (
-                    <div className="page-wrap">
-                      <ComingSoonView game={game} onBack={() => backToGames()} />
-      </div>
+            return (
+                        <div className="page-wrap">
+            {playerViewWidget}
+                <ComingSoonView game={game} onBack={() => backToGames()} />
+        </div>
     );
 }
 
   if (game.id === "spelling-bee") {
-          return (
-                    <div className="page-wrap">
-                      <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
-                        ← Back to Games
-                            </button>
+            return (
+                        <div className="page-wrap">
+            {playerViewWidget}
+                <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
+          ← Back to Games
+                </button>
         <h1 className="page-title">🐝 Spelling Bee</h1>
         <p className="page-subtitle">Say the word out loud, host judges live</p>
 
         <div className="card">
-                                      <p className="card-label">Leaderboard (whole night)</p>
+                          <p className="card-label">Leaderboard (whole night)</p>
           <Leaderboard />
-                            </div>
+                </div>
 
         <div className="card">
-                                      <p className="card-label">Set Word</p>
+                          <p className="card-label">Set Word</p>
           <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
             Type the word for your own reference and read it out loud - players never see it typed here.
-                </p>
+                  </p>
           <div className="form-row" style={{ justifyContent: "flex-start" }}>
             <input
               type="text"
@@ -348,65 +425,66 @@ function HostControls() {
               style={{ flex: 1, minWidth: 200 }}
             />
             <button className="btn-primary" onClick={pushSpellingWord}>Set Word</button>
-                </div>
+                  </div>
 {spellingBee?.word && (
-                <p style={{ marginTop: 10 }}>
+                  <p style={{ marginTop: 10 }}>
               Current word: <strong>{spellingBee.word}</strong>
-                  </p>
+                    </p>
           )}
 </div>
 
         <div className="card">
-                        <p className="card-label">Whose Turn</p>
-                {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
+                          <p className="card-label">Whose Turn</p>
+{players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {players.map((p) => (
-                <div key={p.id} className="answer-row">
-                  <Avatar avatarId={p.avatarId} size="sm" />
-                  <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                  <div key={p.id} className="answer-row">
+                    <Avatar avatarId={p.avatarId} size="sm" />
+                    <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
 {spellingBee?.currentPlayerId === p.id ? (
-                    <span className="status-pill on"><span className="dot" /> Up now</span>
-                  ) : (
-                    <button className="btn-secondary" onClick={() => setSpellingTurn(p.id)}>Give Turn</button>
-                  )}
+                      <span className="status-pill on"><span className="dot" /> Up now</span>
+                    ) : (
+                      <button className="btn-secondary" onClick={() => setSpellingTurn(p.id)}>Give Turn</button>
+              )}
 </div>
           ))}
-              </div>
+                </div>
 
 {spellingBee?.currentPlayerId && (
-              <div className="card">
-                <p className="card-label">Judge the Attempt</p>
+                <div className="card">
+                  <p className="card-label">Judge the Attempt</p>
              <p style={{ color: "var(--muted)" }}>
 {players.find((p) => p.id === spellingBee.currentPlayerId)?.name || "Player"} is spelling - did they get it right?
-    </p>
+      </p>
             <div className="form-row" style={{ justifyContent: "flex-start" }}>
               <button className="btn-good" onClick={() => handleSpellingCorrect(spellingBee.currentPlayerId)}>✓ Correct (+1)</button>
-                  <button className="btn-bad" onClick={() => handleSpellingIncorrect()}>✗ Incorrect</button>
-    </div>
-    </div>
+              <button className="btn-bad" onClick={() => handleSpellingIncorrect()}>✗ Incorrect</button>
+      </div>
+      </div>
         )}
 </div>
     );
 }
 
   if (game.id === "know-your-host") {
-          const khAnswers = knowHost?.answers || {};
-          return (
-                    <div className="page-wrap">
-                      <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
+            const khAnswers = knowHost?.answers || {};
+            return (
+                        <div className="page-wrap">
+            {playerViewWidget}
+                <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
           ← Back to Games
-              </button>
+                </button>
         <h1 className="page-title">🎙️ Know Your Host</h1>
         <p className="page-subtitle">How well do they really know you?</p>
 
         <div className="card">
-                        <p className="card-label">Leaderboard (whole night)</p>
-                        <Leaderboard />
-              </div>
+                          <p className="card-label">Leaderboard (whole night)</p>
+                          <Leaderboard />
+                </div>
 
         <div className="card">
-                        <p className="card-label">Set Question</p>
-                        <input
-                          type="text"
+                          <p className="card-label">Set Question</p>
+                          <input
+                            type="text"
             placeholder="Question about you"
             value={knowHostQuestionText}
             onChange={(e) => setKnowHostQuestionText(e.target.value)}
@@ -420,12 +498,12 @@ function HostControls() {
             style={{ width: "100%", marginBottom: 10 }}
           />
           <button className="btn-primary" onClick={pushKnowHostQuestion}>Push New Question</button>
-              </div>
+                </div>
 
 {knowHost?.questionText && (
-              <>
-                <div className="card">
-                  <p className="card-label">Current Question</p>
+                <>
+                  <div className="card">
+                    <p className="card-label">Current Question</p>
                <p style={{ fontSize: 19, fontWeight: 700, marginTop: 0 }}>{knowHost.questionText}</p>
               <p style={{ color: "var(--muted)" }}>Correct answer: {knowHost.correctAnswer || "(not set)"}</p>
               <div className="form-row" style={{ justifyContent: "flex-start" }}>
@@ -433,7 +511,7 @@ function HostControls() {
                 <button className="btn-bad" onClick={() => setKnowHostAnswersOpen(false)}>Lock Answers</button>
                 <button className="btn-primary" onClick={() => revealKnowHost()}>Reveal to Everyone</button>
                 <button className="btn-secondary" onClick={() => clearKnowHostAnswers()}>Reset for Next Question</button>
-    </div>
+      </div>
               <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
                 <span className={`status-pill ${knowHost.answersOpen ? "on" : "off"}`}>
                   <span className="dot" /> Answers {knowHost.answersOpen ? "Open" : "Closed"}
@@ -441,36 +519,37 @@ function HostControls() {
                 <span className={`status-pill ${knowHost.revealed ? "on" : "off"}`}>
                   <span className="dot" /> {knowHost.revealed ? "Revealed" : "Hidden"}
 </span>
-    </div>
-    </div>
+      </div>
+      </div>
 
             <div className="card">
-                  <p className="card-label">Answers Received</p>
+                    <p className="card-label">Answers Received</p>
 {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {players.map((p) => (
-                    <div key={p.id} className="answer-row">
-                      <Avatar avatarId={p.avatarId} size="sm" />
-                      <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                      <div key={p.id} className="answer-row">
+                        <Avatar avatarId={p.avatarId} size="sm" />
+                        <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
                   <div style={{ flex: 2, color: khAnswers[p.id] ? "var(--text)" : "var(--muted)" }}>
 {khAnswers[p.id] || "no answer yet"}
 </div>
                   <button className="btn-good" onClick={() => awardKnowHostPoint(p.id)}>+1</button>
-    </div>
+      </div>
               ))}
-                  </div>
-                  </>
+                    </div>
+                    </>
         )}
 </div>
     );
 }
 
-if (game.id === "know-your-partner") {
-          const pairs = partnerGame?.pairs || {};
-          const pgAnswers = partnerGame?.answers || {};
-          const nameOf = (id) => players.find((p) => p.id === id)?.name || "?";
-          return (
-                      <div className="page-wrap">
-                        <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
+  if (game.id === "know-your-partner") {
+            const pairs = partnerGame?.pairs || {};
+                      const pgAnswers = partnerGame?.answers || {};
+            const nameOf = (id) => players.find((p) => p.id === id)?.name || "?";
+            return (
+                        <div className="page-wrap">
+{playerViewWidget}
+                <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
           ← Back to Games
                 </button>
         <h1 className="page-title">💞 Know Your Partner</h1>
@@ -503,19 +582,28 @@ if (game.id === "know-your-partner") {
                 </div>
 
         <div className="card">
-                          <p className="card-label">Set Question</p>
-          <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
-            e.g. "What's your dream destination?" - each partner answers for themselves AND guesses their partner's answer.
-                  </p>
+                          <p className="card-label">Questions ({partnerQIndex + 1} of {PARTNER_QUESTIONS.length})</p>
+          <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 10 }}>{PARTNER_QUESTIONS[partnerQIndex]}</p>
+          <div className="form-row" style={{ justifyContent: "flex-start", marginBottom: 14 }}>
+            <button className="btn-primary" onClick={pushPresetPartnerQuestion}>Push This Question</button>
+            <button
+              className="btn-secondary"
+              onClick={nextPartnerQuestion}
+              disabled={partnerQIndex >= PARTNER_QUESTIONS.length - 1}
+                                >
+                                  Next Question →
+                    </button>
+                    </div>
+          <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>Or write your own:</p>
           <div className="form-row" style={{ justifyContent: "flex-start" }}>
             <input
               type="text"
-              placeholder="Question for both partners"
+              placeholder="Custom question for both partners"
               value={partnerQuestionInput}
               onChange={(e) => setPartnerQuestionInput(e.target.value)}
               style={{ flex: 1, minWidth: 200 }}
             />
-            <button className="btn-primary" onClick={pushPartnerQuestion}>Push Question</button>
+            <button className="btn-primary" onClick={pushPartnerQuestion}>Push Custom</button>
                   </div>
                   </div>
 
@@ -546,18 +634,18 @@ if (game.id === "know-your-partner") {
 {nameOf(pair.a)} said "{aAns.own || "-"}", guessed "{aAns.guess || "-"}"
       </p>
                         <button className="btn-good" onClick={() => { addLeaderboardPoints(pair.a, 1); addLeaderboardPoints(pair.b, 1); }}>Match ✓</button>
-                              <button className="btn-bad">No Match</button>
+                        <button className="btn-bad">No Match</button>
       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
                         <p style={{ margin: 0, flex: 1 }}>
 {nameOf(pair.b)} said "{bAns.own || "-"}", guessed "{bAns.guess || "-"}"
       </p>
                         <button className="btn-good" onClick={() => { addLeaderboardPoints(pair.a, 1); addLeaderboardPoints(pair.b, 1); }}>Match ✓</button>
-                              <button className="btn-bad">No Match</button>
+                        <button className="btn-bad">No Match</button>
       </div>
       </>
                   )}
-                        </div>
+</div>
               );
 })}
 </div>
@@ -567,51 +655,52 @@ if (game.id === "know-your-partner") {
 }
 
   if (game.id === "guess-the-real-place") {
-          const assignments = teamGame?.assignments || {};
-          const teamScores = teamGame?.scores || {};
-          const teamNames = teamGame?.teamNames || {};
-          return (
-                    <div className="page-wrap">
-                      <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
+            const assignments = teamGame?.assignments || {};
+            const teamScores = teamGame?.scores || {};
+            const teamNames = teamGame?.teamNames || {};
+            return (
+                        <div className="page-wrap">
+            {playerViewWidget}
+                <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
           ← Back to Games
-              </button>
+                </button>
         <h1 className="page-title">🗺️ Guess the Real Place</h1>
         <p className="page-subtitle">Team battle - default scoring, refine later</p>
 
         <div className="card">
-                        <p className="card-label">Leaderboard (whole night)</p>
+                          <p className="card-label">Leaderboard (whole night)</p>
           <Leaderboard />
-              </div>
+                </div>
 
         <div className="card">
-                        <p className="card-label">Team Names</p>
+                          <p className="card-label">Team Names</p>
           <div className="form-row" style={{ justifyContent: "flex-start" }}>
             <input type="text" placeholder="Team A name" value={teamNameAInput} onChange={(e) => setTeamNameAInput(e.target.value)} />
             <button className="btn-secondary" onClick={() => { setTeamName("A", teamNameAInput.trim()); setTeamNameAInput(""); }}>Set</button>
             <input type="text" placeholder="Team B name" value={teamNameBInput} onChange={(e) => setTeamNameBInput(e.target.value)} />
             <button className="btn-secondary" onClick={() => { setTeamName("B", teamNameBInput.trim()); setTeamNameBInput(""); }}>Set</button>
-              </div>
-              </div>
+                </div>
+                </div>
 
         <div className="card">
-                        <p className="card-label">Assign Teams</p>
+                          <p className="card-label">Assign Teams</p>
 {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {players.map((p) => (
-                <div key={p.id} className="answer-row">
-                  <Avatar avatarId={p.avatarId} size="sm" />
-                  <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                  <div key={p.id} className="answer-row">
+                    <Avatar avatarId={p.avatarId} size="sm" />
+                    <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
               <button className={assignments[p.id] === "A" ? "btn-good" : "btn-secondary"} onClick={() => setPlayerTeam(p.id, "A")}>
 {teamNames.A || "Team A"}
 </button>
               <button className={assignments[p.id] === "B" ? "btn-good" : "btn-secondary"} onClick={() => setPlayerTeam(p.id, "B")}>
 {teamNames.B || "Team B"}
 </button>
-    </div>
+      </div>
           ))}
 </div>
 
         <div className="card">
-                        <p className="card-label">Set Prompt</p>
+                          <p className="card-label">Set Prompt</p>
           <div className="form-row" style={{ justifyContent: "flex-start" }}>
             <input
               type="text"
@@ -621,122 +710,124 @@ if (game.id === "know-your-partner") {
               style={{ flex: 1, minWidth: 200 }}
             />
             <button className="btn-primary" onClick={pushTeamPrompt}>Push Prompt</button>
-                </div>
+                  </div>
 {teamGame?.prompt && (
-                <p style={{ marginTop: 10 }}>
+                  <p style={{ marginTop: 10 }}>
               Current prompt: <strong>{teamGame.prompt}</strong>
-</p>
+                    </p>
           )}
 {teamGame?.prompt && (
-                <button className="btn-primary" onClick={() => revealTeamPrompt()} style={{ marginTop: 10 }}>Reveal to Everyone</button>
+                  <button className="btn-primary" onClick={() => revealTeamPrompt()} style={{ marginTop: 10 }}>Reveal to Everyone</button>
           )}
 </div>
 
         <div className="card">
-                        <p className="card-label">Team Scores</p>
+                          <p className="card-label">Team Scores</p>
           <div className="answer-row">
-                          <div style={{ flex: 1, fontWeight: 600 }}>{teamNames.A || "Team A"}</div>
+                            <div style={{ flex: 1, fontWeight: 600 }}>{teamNames.A || "Team A"}</div>
             <div style={{ width: 60, textAlign: "center", fontWeight: 700 }}>{teamScores.A || 0} pts</div>
             <button className="btn-good" onClick={() => awardTeamPoints("A", 1)}>+1</button>
             <button className="btn-bad" onClick={() => awardTeamPoints("A", -1)}>-1</button>
-              </div>
+                </div>
           <div className="answer-row">
-                          <div style={{ flex: 1, fontWeight: 600 }}>{teamNames.B || "Team B"}</div>
+                            <div style={{ flex: 1, fontWeight: 600 }}>{teamNames.B || "Team B"}</div>
             <div style={{ width: 60, textAlign: "center", fontWeight: 700 }}>{teamScores.B || 0} pts</div>
             <button className="btn-good" onClick={() => awardTeamPoints("B", 1)}>+1</button>
             <button className="btn-bad" onClick={() => awardTeamPoints("B", -1)}>-1</button>
-    </div>
+                </div>
           <button className="btn-secondary" onClick={() => resetTeamScores()} style={{ marginTop: 12 }}>Reset Scores</button>
-              </div>
-              </div>
+                </div>
+                </div>
     );
 }
 
   if (game.id === "guess-the-photo") {
-          const gpAnswers = guessPhoto?.answers || {};
-          const photoOptions = AVATARS.filter((a) => a.photoUrl);
-          return (
-                    <div className="page-wrap">
-                      <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
+            const gpAnswers = guessPhoto?.answers || {};
+            const photoOptions = AVATARS.filter((a) => a.photoUrl);
+            return (
+                        <div className="page-wrap">
+            {playerViewWidget}
+                <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
           ← Back to Games
-              </button>
+                </button>
         <h1 className="page-title">📸 Guess the Photo</h1>
         <p className="page-subtitle">Zoomed in - guess who it is</p>
 
         <div className="card">
-                        <p className="card-label">Leaderboard (whole night)</p>
+                          <p className="card-label">Leaderboard (whole night)</p>
           <Leaderboard />
-              </div>
+                </div>
 
         <div className="card">
-                        <p className="card-label">Start Round</p>
+                          <p className="card-label">Start Round</p>
           <div className="form-row" style={{ justifyContent: "flex-start" }}>
             <select value={guessPhotoAvatarId} onChange={(e) => setGuessPhotoAvatarId(e.target.value)}>
               <option value="">Pick a photo</option>
 {photoOptions.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-    </select>
+      </select>
             <button className="btn-primary" onClick={startPhotoRound}>Start Round</button>
-    </div>
-    </div>
+      </div>
+      </div>
 
 {guessPhoto?.avatarId && (
-              <>
-                <div className="card" style={{ textAlign: "center" }}>
+                <>
+                  <div className="card" style={{ textAlign: "center" }}>
               <p className="card-label">Live Photo (host view)</p>
               <div style={{ display: "inline-block", filter: `blur(${guessPhoto.blurLevel || 0}px)`, transition: "filter 0.3s" }}>
                 <Avatar avatarId={guessPhoto.avatarId} size="lg" />
-    </div>
+      </div>
               <p style={{ marginTop: 10, color: "var(--muted)" }}>Blur level: {guessPhoto.blurLevel ?? 0}</p>
               <div className="form-row" style={{ justifyContent: "center" }}>
                 <button className="btn-secondary" onClick={() => setGuessPhotoBlur(Math.min(24, (guessPhoto.blurLevel ?? 0) + 4))}>Blur +</button>
                 <button className="btn-secondary" onClick={() => setGuessPhotoBlur(Math.max(0, (guessPhoto.blurLevel ?? 0) - 4))}>Sharpen -</button>
                 <button className="btn-primary" onClick={() => revealGuessPhoto()}>Reveal</button>
-    </div>
+      </div>
 {guessPhoto.revealed && (
-                    <p style={{ marginTop: 10, fontWeight: 700, color: "var(--good)" }}>It's {guessPhoto.correctName}!</p>
-                  )}
+                      <p style={{ marginTop: 10, fontWeight: 700, color: "var(--good)" }}>It's {guessPhoto.correctName}!</p>
+                    )}
 </div>
 
             <div className="card">
-                  <p className="card-label">Guesses</p>
+                    <p className="card-label">Guesses</p>
 {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {players.map((p) => (
-                    <div key={p.id} className="answer-row">
-                      <Avatar avatarId={p.avatarId} size="sm" />
-                      <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                      <div key={p.id} className="answer-row">
+                        <Avatar avatarId={p.avatarId} size="sm" />
+                        <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
                   <div style={{ flex: 2, color: gpAnswers[p.id] ? "var(--text)" : "var(--muted)" }}>
 {gpAnswers[p.id] || "no guess yet"}
 </div>
                   <button className="btn-good" onClick={() => addLeaderboardPoints(p.id, 1)}>+1</button>
-    </div>
+      </div>
               ))}
-                  </div>
-                  </>
+                    </div>
+                    </>
         )}
 </div>
     );
 }
 
   if (game.id === "who-sent-this") {
-                const wsAnswers = whoSent?.answers || {};
-          return (
-                    <div className="page-wrap">
-                      <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
+            const wsAnswers = whoSent?.answers || {};
+            return (
+                        <div className="page-wrap">
+            {playerViewWidget}
+                <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
           ← Back to Games
-              </button>
+                </button>
         <h1 className="page-title">🕵️ Who Sent This?</h1>
         <p className="page-subtitle">Guess who sent the pic - rules TBD, framework only</p>
 
         <div className="card">
-                        <p className="card-label">Leaderboard (whole night)</p>
+                          <p className="card-label">Leaderboard (whole night)</p>
           <Leaderboard />
-              </div>
+                </div>
 
         <div className="card">
-                        <p className="card-label">Post Image</p>
+                          <p className="card-label">Post Image</p>
           <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
             Paste an image URL and pick who actually sent it.
-                </p>
+                  </p>
           <input
             type="text"
             placeholder="Image URL"
@@ -748,60 +839,61 @@ if (game.id === "know-your-partner") {
             <select value={whoSentSenderId} onChange={(e) => setWhoSentSenderId(e.target.value)}>
               <option value="">Actual sender</option>
 {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-    </select>
+      </select>
             <button className="btn-primary" onClick={pushWhoSentImage}>Post Image</button>
-    </div>
-    </div>
+      </div>
+      </div>
 
 {whoSent?.imageUrl && (
-              <>
-                <div className="card" style={{ textAlign: "center" }}>
+                <>
+                  <div className="card" style={{ textAlign: "center" }}>
               <p className="card-label">Current Image</p>
               <img src={whoSent.imageUrl} alt="Guess who sent this" style={{ maxWidth: "100%", maxHeight: 300, borderRadius: 12 }} />
               <div style={{ marginTop: 12 }}>
                 <button className="btn-primary" onClick={() => revealWhoSent()}>Reveal & Award Points</button>
-    </div>
+      </div>
 {whoSent.revealed && (
-                    <p style={{ marginTop: 10, fontWeight: 700, color: "var(--good)" }}>
+                      <p style={{ marginTop: 10, fontWeight: 700, color: "var(--good)" }}>
                   Sent by {players.find((p) => p.id === whoSent.correctSenderId)?.name || "?"}
 </p>
               )}
 </div>
 
             <div className="card">
-                  <p className="card-label">Guesses</p>
+                    <p className="card-label">Guesses</p>
 {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {players.map((p) => (
-                    <div key={p.id} className="answer-row">
-                      <Avatar avatarId={p.avatarId} size="sm" />
-                      <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                      <div key={p.id} className="answer-row">
+                        <Avatar avatarId={p.avatarId} size="sm" />
+                        <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
                   <div style={{ flex: 2, color: wsAnswers[p.id] ? "var(--text)" : "var(--muted)" }}>
 {wsAnswers[p.id] ? (players.find((pl) => pl.id === wsAnswers[p.id])?.name || "?") : "no guess yet"}
 </div>
-    </div>
+      </div>
               ))}
-                  </div>
-                  </>
+                    </div>
+                    </>
         )}
 </div>
     );
 }
 
   return (
-          <div className="page-wrap">
-            <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
+            <div className="page-wrap">
+  {playerViewWidget}
+      <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
         ← Back to Games
-            </button>
+              </button>
       <h1 className="page-title">🧠 Trivia Round</h1>
       <p className="page-subtitle">Round 1</p>
 
       <div className="card">
-                    <p className="card-label">Leaderboard (whole night)</p>
+                      <p className="card-label">Leaderboard (whole night)</p>
         <Leaderboard />
-            </div>
+              </div>
 
       <div className="card">
-                    <p className="card-label">Set Question</p>
+                      <p className="card-label">Set Question</p>
         <input
           type="text"
           placeholder="Question text"
@@ -814,7 +906,7 @@ if (game.id === "know-your-partner") {
             <option value="truefalse">True / False</option>
             <option value="numeric">Numeric (closest wins)</option>
             <option value="shortanswer">Short answer</option>
-            </select>
+              </select>
           <input
             type="text"
             placeholder="Correct answer (for your reference + reveal)"
@@ -822,14 +914,14 @@ if (game.id === "know-your-partner") {
             onChange={(e) => setCorrectAnswer(e.target.value)}
             style={{ flex: 1, minWidth: 200 }}
           />
-              </div>
+                </div>
         <button className="btn-primary" onClick={pushQuestion}>Push New Question</button>
-              </div>
+                </div>
 
 {round1 && (
-            <>
-              <div className="card">
-                <p className="card-label">Current Question</p>
+              <>
+                <div className="card">
+                  <p className="card-label">Current Question</p>
              <p style={{ fontSize: 19, fontWeight: 700, marginTop: 0 }}>{round1.questionText}</p>
             <p style={{ color: "var(--muted)" }}>Correct answer: {round1.correctAnswer || "(not set)"}</p>
             <div className="form-row" style={{ justifyContent: "flex-start" }}>
@@ -837,7 +929,7 @@ if (game.id === "know-your-partner") {
               <button className="btn-bad" onClick={() => setAnswersOpen(false)}>Lock Answers</button>
               <button className="btn-primary" onClick={() => revealRound1()}>Reveal to Everyone</button>
               <button className="btn-secondary" onClick={() => clearRound1Answers()}>Reset for Next Question</button>
-    </div>
+      </div>
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <span className={`status-pill ${round1.answersOpen ? "on" : "off"}`}>
                 <span className="dot" /> Answers {round1.answersOpen ? "Open" : "Closed"}
@@ -845,21 +937,21 @@ if (game.id === "know-your-partner") {
               <span className={`status-pill ${round1.revealed ? "on" : "off"}`}>
                 <span className="dot" /> {round1.revealed ? "Revealed" : "Hidden"}
 </span>
-    </div>
-    </div>
+      </div>
+      </div>
 
           <div className="card">
-                <p className="card-label">Answers Received</p>
+                  <p className="card-label">Answers Received</p>
             <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>Type points in the box, then hit Award — nothing is scored automatically.</p>
 {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {players.map((p) => (
-                  <div key={p.id} className="answer-row">
-                    <Avatar avatarId={p.avatarId} size="sm" />
-                    <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                    <div key={p.id} className="answer-row">
+                      <Avatar avatarId={p.avatarId} size="sm" />
+                <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
                 <div style={{ flex: 2, color: answers[p.id] ? "var(--text)" : "var(--muted)" }}>
 {answers[p.id] || "no answer yet"}
 </div>
-                 <div style={{ width: 55, textAlign: "center", fontWeight: 700 }}>{scores[p.id] || 0} pts</div>
+                <div style={{ width: 55, textAlign: "center", fontWeight: 700 }}>{scores[p.id] || 0} pts</div>
                 <input
                   type="number"
                   placeholder="+/-"
@@ -870,32 +962,32 @@ if (game.id === "know-your-partner") {
                 <button
                   className="btn-primary"
                   onClick={() => {
-                                          const amt = parseInt(pointInputs[p.id] || "0", 10);
-                                          if (!amt) return;
-                                          awardRound1Points(p.id, amt);
-                                          setPointInputs({ ...pointInputs, [p.id]: "" });
+                                            const amt = parseInt(pointInputs[p.id] || "0", 10);
+                                            if (!amt) return;
+                                            awardRound1Points(p.id, amt);
+                                            setPointInputs({ ...pointInputs, [p.id]: "" });
                   }}
                 >
-                                        Award
-                      </button>
-                      </div>
+                                          Award
+                        </button>
+                        </div>
             ))}
-                </div>
+                  </div>
 
           <div className="card">
-                            <p className="card-label">Round Standings</p>
+                              <p className="card-label">Round Standings</p>
             <p style={{ color: "var(--muted)", fontSize: 13, marginTop: -6 }}>
               Ranked by in-game score above. Finalizing awards leaderboard points automatically — 1st place gets {players.length || 0}, last place gets 1.
-                  </p>
+                    </p>
 {standings.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
 {standings.map((s, i) => (
-                  <div key={s.id} className="answer-row">
-                    <div style={{ width: 32, fontWeight: 800, color: "var(--gold)" }}>#{i + 1}</div>
+                    <div key={s.id} className="answer-row">
+                      <div style={{ width: 32, fontWeight: 800, color: "var(--gold)" }}>#{i + 1}</div>
                 <Avatar avatarId={s.avatarId} size="sm" />
-                 <div style={{ flex: 1, fontWeight: 600 }}>{s.name}</div>
+                      <div style={{ flex: 1, fontWeight: 600 }}>{s.name}</div>
                 <div style={{ width: 110, textAlign: "center", color: "var(--muted)" }}>{s.score} round pts</div>
                 <div style={{ width: 130, textAlign: "center", fontWeight: 700, color: "var(--good)" }}>+{s.points} leaderboard</div>
-    </div>
+      </div>
             ))}
             <button
               className="btn-good"
@@ -905,20 +997,20 @@ if (game.id === "know-your-partner") {
             >
 {roundFinalized ? "✅ Points Awarded" : "🏆 Finalize Round & Award Points"}
 </button>
-    </div>
-    </>
+      </div>
+      </>
       )}
 </div>
   );
 }
 
 function GamesDashboard({ games, onSelect }) {
-      return (
-              <div className="card">
-                <p className="card-label">Choose a Game</p>
-          <div className="game-grid">
-      {games.map((g) => (
-                    <button key={g.id} className="game-card" onClick={() => onSelect(g.id)}>
+        return (
+                  <div className="card">
+                    <p className="card-label">Choose a Game</p>
+            <div className="game-grid">
+        {games.map((g) => (
+                        <button key={g.id} className="game-card" onClick={() => onSelect(g.id)}>
             <div className="game-card-swatch" style={{ background: g.swatch }} />
             <div className="game-card-icon">{g.icon}</div>
             <div className="game-card-name">{g.name}</div>
@@ -926,34 +1018,34 @@ function GamesDashboard({ games, onSelect }) {
             <span className={`status-pill ${g.status === "live" ? "on" : "off"}`}>
               <span className="dot" /> {g.status === "live" ? "Ready to Play" : "Coming Soon"}
 </span>
-    </button>
+      </button>
         ))}
-            </div>
-            </div>
+              </div>
+              </div>
   );
 }
 
 function ComingSoonView({ game, onBack }) {
-      const t = game.theme;
-      return (
-              <div>
-                <button className="btn-secondary" onClick={onBack} style={{ marginBottom: 16 }}>
+        const t = game.theme;
+        return (
+                  <div>
+                    <button className="btn-secondary" onClick={onBack} style={{ marginBottom: 16 }}>
         ← Back to Games
-            </button>
+              </button>
       <div
         className="card"
-            style={{
-                          background: t.bg,
-                          border: `1px solid ${t.border}`,
-                          textAlign: "center",
-                          padding: 48,
-            }}
+        style={{
+                        background: t.bg,
+                        border: `1px solid ${t.border}`,
+                        textAlign: "center",
+                        padding: 48,
+        }}
       >
         <div style={{ fontSize: 56, marginBottom: 12 }}>{game.icon}</div>
         <h2 style={{ color: t.fg, textShadow: "none", margin: "0 0 8px" }}>{game.name}</h2>
         <p style={{ color: t.fg, opacity: 0.75, margin: 0 }}>{game.tagline}</p>
         <p style={{ marginTop: 24, fontWeight: 800, color: t.accent, letterSpacing: 1 }}>🚧 COMING SOON</p>
-          </div>
-          </div>
-  );
+            </div>
+            </div>
+              );
 }
