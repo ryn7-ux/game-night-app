@@ -37,6 +37,7 @@ export default function PlayPage() {
 
   const [knowHost, setKnowHost] = useState(null);
   const [knowHostAnswer, setKnowHostAnswer] = useState("");
+  const [knowHostOrder, setKnowHostOrder] = useState([]);
   const [knowHostSubmitted, setKnowHostSubmitted] = useState(false);
 
   const [partnerGame, setPartnerGame] = useState(null);
@@ -106,7 +107,8 @@ export default function PlayPage() {
   useEffect(() => {
     setKnowHostSubmitted(false);
     setKnowHostAnswer("");
-  }, [knowHost?.questionText]);
+    setKnowHostOrder([]);
+  }, [knowHost?.prompt]);
 
   useEffect(() => {
     setPartnerSubmitted(false);
@@ -135,6 +137,27 @@ export default function PlayPage() {
     e.preventDefault();
     if (!knowHostAnswer.trim() || !playerId) return;
     await submitKnowHostAnswer(playerId, knowHostAnswer.trim());
+    setKnowHostSubmitted(true);
+  }
+
+  function toggleKnowHostOrderItem(item) {
+    setKnowHostOrder((prev) => {
+      if (prev.includes(item)) return prev.filter((x) => x !== item);
+      const limit = knowHost?.type === "rank" ? (knowHost.items?.length || 0) : (knowHost?.pickCount || 0);
+      if (prev.length >= limit) return prev;
+      return [...prev, item];
+    });
+  }
+
+  async function handleKnowHostOrderSubmit() {
+    if (!playerId || knowHostOrder.length === 0) return;
+    await submitKnowHostAnswer(playerId, knowHostOrder);
+    setKnowHostSubmitted(true);
+  }
+
+  async function handleKnowHostMcqSubmit(i) {
+    if (!playerId) return;
+    await submitKnowHostAnswer(playerId, i);
     setKnowHostSubmitted(true);
   }
 
@@ -267,10 +290,11 @@ export default function PlayPage() {
       {currentGame === "know-your-host" && (
         <div className="card" style={{ maxWidth: 500, width: "100%" }}>
           <h2 style={{ marginTop: 0 }}>🎙️ Know Your Host</h2>
-          {knowHost?.questionText ? (
+          {knowHost?.prompt ? (
             <>
-              <p style={{ fontSize: 18, fontWeight: 600 }}>{knowHost.questionText}</p>
-              {!knowHost.revealed && knowHost.answersOpen && !knowHostSubmitted && (
+              <p style={{ fontSize: 18, fontWeight: 600 }}>{knowHost.prompt}</p>
+
+              {knowHost.type === "text" && !knowHost.revealed && knowHost.answersOpen && !knowHostSubmitted && (
                 <form onSubmit={handleKnowHostSubmit} style={{ display: "flex", gap: 8, marginTop: 12 }}>
                   <input
                     type="text"
@@ -284,6 +308,63 @@ export default function PlayPage() {
                   <button className="btn-primary" type="submit" disabled={spectator}>Submit</button>
                 </form>
               )}
+
+              {(knowHost.type === "rank" || knowHost.type === "pick-rank") &&
+                !knowHost.revealed && knowHost.answersOpen && !knowHostSubmitted && (
+                <div style={{ marginTop: 12 }}>
+                  <p style={{ color: "var(--muted)", fontSize: 13 }}>
+                    Tap items in order{knowHost.type === "pick-rank" ? ` (pick ${knowHost.pickCount})` : ""}. Tap again to remove.
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                    {(knowHost.type === "rank" ? knowHost.items : knowHost.pool || []).map((item) => {
+                      const pos = knowHostOrder.indexOf(item);
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          disabled={spectator}
+                          onClick={() => toggleKnowHostOrderItem(item)}
+                          className={pos >= 0 ? "btn-primary" : "btn-secondary"}
+                          style={{ fontSize: 13 }}
+                        >
+                          {pos >= 0 ? `${pos + 1}. ` : ""}{item}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    className="btn-good"
+                    style={{ marginTop: 12 }}
+                    disabled={
+                      spectator ||
+                      knowHostOrder.length === 0 ||
+                      (knowHost.type === "rank" && knowHostOrder.length !== (knowHost.items?.length || 0)) ||
+                      (knowHost.type === "pick-rank" && knowHostOrder.length !== knowHost.pickCount)
+                    }
+                    onClick={handleKnowHostOrderSubmit}
+                  >
+                    Submit Order
+                  </button>
+                </div>
+              )}
+
+              {knowHost.type === "mcq" && !knowHost.revealed && knowHost.answersOpen && !knowHostSubmitted && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                  {(knowHost.options || []).map((opt, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      disabled={spectator}
+                      className="btn-secondary"
+                      onClick={() => handleKnowHostMcqSubmit(i)}
+                      style={{ textAlign: "left" }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {!knowHost.revealed && knowHost.answersOpen && knowHostSubmitted && (
                 <p style={{ color: "var(--good)" }}>Answer locked in - waiting for everyone else...</p>
               )}
@@ -293,7 +374,19 @@ export default function PlayPage() {
               {knowHost.revealed && (
                 <div>
                   <p style={{ color: "var(--muted)" }}>Correct answer:</p>
-                  <p style={{ fontSize: 22, fontWeight: 700, color: "var(--good)" }}>{knowHost.correctAnswer}</p>
+                  {knowHost.type === "text" && (
+                    <p style={{ fontSize: 22, fontWeight: 700, color: "var(--good)" }}>{knowHost.answer}</p>
+                  )}
+                  {(knowHost.type === "rank" || knowHost.type === "pick-rank") && (
+                    <p style={{ fontSize: 18, fontWeight: 700, color: "var(--good)" }}>
+                      {(knowHost.answerOrder || []).join(" → ")}
+                    </p>
+                  )}
+                  {knowHost.type === "mcq" && (
+                    <p style={{ fontSize: 22, fontWeight: 700, color: "var(--good)" }}>
+                      {knowHost.options?.[knowHost.correctIndex]}
+                    </p>
+                  )}
                 </div>
               )}
             </>
