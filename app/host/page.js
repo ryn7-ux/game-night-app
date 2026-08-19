@@ -117,6 +117,108 @@ const GAMES = [
   },
 ];
 
+const KNOW_HOST_QUESTIONS = [
+  {
+    id: "birthday",
+    type: "text",
+    prompt: "What's my birthday?",
+    answer: "February 9, 2002",
+  },
+  {
+    id: "lockscreen",
+    type: "text",
+    prompt: "Who's on my lock screen?",
+    answer: "Lando Norris or Ronaldo",
+  },
+  {
+    id: "movies-rank",
+    type: "rank",
+    prompt: "Rank these movies from my favorite to least favorite:",
+    items: [
+      "Spider-Man: Brand New Day",
+      "Project Hail Mary",
+      "Mollywood Times",
+      "The Odyssey",
+      "Vaazha II: Biopic of a Billion Bros",
+    ],
+    answerOrder: [
+      "Spider-Man: Brand New Day",
+      "Project Hail Mary",
+      "Mollywood Times",
+      "The Odyssey",
+      "Vaazha II: Biopic of a Billion Bros",
+    ],
+    maxPoints: 5,
+  },
+  {
+    id: "athlete",
+    type: "text",
+    prompt: "What's my favorite athlete/sportsperson?",
+    answer: "Cristiano Ronaldo",
+  },
+  {
+    id: "sports-pick-rank",
+    type: "pick-rank",
+    prompt: "Out of these sports, pick my top 5 favorites and rank them in order:",
+    pool: [
+      "Football",
+      "F1",
+      "Tennis",
+      "Basketball",
+      "Volleyball",
+      "Golf",
+      "Cricket",
+      "Padel",
+      "Table Tennis",
+      "Baseball",
+      "Badminton",
+    ],
+    pickCount: 5,
+    answerOrder: ["Football", "F1", "Tennis", "Volleyball", "Golf"],
+    maxPoints: 10,
+  },
+  {
+    id: "not-true",
+    type: "mcq",
+    prompt: "Which of the following is NOT true about me?",
+    options: [
+      "I have a medal in 800m track",
+      "I have received an honour roll in school",
+      "I have acted in a play",
+      "I attended a session of therapy",
+    ],
+    correctIndex: 3,
+    maxPoints: 1,
+  },
+];
+
+function computeKnowHostScore(q, answer) {
+  if (!q || answer === undefined || answer === null || answer === "") return null;
+  if (q.type === "rank") {
+    const order = q.answerOrder || q.items || [];
+    if (!Array.isArray(answer)) return 0;
+    let score = 0;
+    order.forEach((item, i) => {
+      if (answer[i] === item) score += 1;
+    });
+    return score;
+  }
+  if (q.type === "pick-rank") {
+    const order = q.answerOrder || [];
+    if (!Array.isArray(answer)) return 0;
+    let score = 0;
+    answer.forEach((item, i) => {
+      if (order.includes(item)) score += 1;
+      if (order[i] === item) score += 1;
+    });
+    return score;
+  }
+  if (q.type === "mcq") {
+    return answer === q.correctIndex ? q.maxPoints || 1 : 0;
+  }
+  return null;
+}
+
 const PARTNER_QUESTIONS = [
   "What's your favorite food, and what do you think your partner's favorite food is?",
   "What's your dream destination, and what do you think your partner's dream destination is?",
@@ -245,6 +347,7 @@ function HostControls() {
   const [knowHost, setKnowHost] = useState(null);
   const [knowHostQuestionText, setKnowHostQuestionText] = useState("");
   const [knowHostAnswerInput, setKnowHostAnswerInput] = useState("");
+  const [knowHostQIndex, setKnowHostQIndex] = useState(0);
 
   const [partnerGame, setPartnerGame] = useState(null);
   const [partnerQuestionInput, setPartnerQuestionInput] = useState("");
@@ -386,14 +489,27 @@ function HostControls() {
     await revealSpellingWord();
   }
 
-  async function pushKnowHostQuestion() {
+  async function pushKnowHostBankQuestion() {
+    await setKnowHostQuestion(KNOW_HOST_QUESTIONS[knowHostQIndex]);
+  }
+
+  async function pushCustomKnowHostQuestion() {
     if (!knowHostQuestionText.trim()) return;
     await setKnowHostQuestion({
-      questionText: knowHostQuestionText.trim(),
-      correctAnswer: knowHostAnswerInput.trim(),
+      type: "text",
+      prompt: knowHostQuestionText.trim(),
+      answer: knowHostAnswerInput.trim(),
     });
     setKnowHostQuestionText("");
     setKnowHostAnswerInput("");
+  }
+
+  function nextKnowHostQuestion() {
+    setKnowHostQIndex((i) => Math.min(i + 1, KNOW_HOST_QUESTIONS.length - 1));
+  }
+
+  function prevKnowHostQuestion() {
+    setKnowHostQIndex((i) => Math.max(i - 1, 0));
   }
 
   async function handleAddPair() {
@@ -685,6 +801,7 @@ function HostControls() {
 
   if (game.id === "know-your-host") {
     const khAnswers = knowHost?.answers || {};
+    const bankQ = KNOW_HOST_QUESTIONS[knowHostQIndex];
     return (
       <div className="page-wrap">
         {playerViewWidget}
@@ -700,7 +817,46 @@ function HostControls() {
         </div>
 
         <div className="card">
-          <p className="card-label">Set Question</p>
+          <p className="card-label">Question Bank ({knowHostQIndex + 1} of {KNOW_HOST_QUESTIONS.length}) - {bankQ.type}</p>
+          <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>{bankQ.prompt}</p>
+          {bankQ.type === "text" && (
+            <p style={{ color: "var(--good)" }}>Answer: {bankQ.answer}</p>
+          )}
+          {bankQ.type === "rank" && (
+            <p style={{ color: "var(--good)" }}>Correct order: {bankQ.answerOrder.join(" → ")} ({bankQ.maxPoints} pts)</p>
+          )}
+          {bankQ.type === "pick-rank" && (
+            <>
+              <p style={{ color: "var(--muted)", fontSize: 13 }}>Pool: {bankQ.pool.join(", ")}</p>
+              <p style={{ color: "var(--good)" }}>Correct: {bankQ.answerOrder.join(" → ")} ({bankQ.maxPoints} pts)</p>
+            </>
+          )}
+          {bankQ.type === "mcq" && (
+            <>
+              {bankQ.options.map((opt, i) => (
+                <p key={i} style={{ color: i === bankQ.correctIndex ? "var(--good)" : "var(--text)", margin: "2px 0" }}>
+                  {i === bankQ.correctIndex ? "✓ " : ""}{opt}
+                </p>
+              ))}
+            </>
+          )}
+          <div className="form-row" style={{ justifyContent: "flex-start", marginTop: 10 }}>
+            <button className="btn-secondary" onClick={prevKnowHostQuestion} disabled={knowHostQIndex <= 0}>
+              ← Prev
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={nextKnowHostQuestion}
+              disabled={knowHostQIndex >= KNOW_HOST_QUESTIONS.length - 1}
+            >
+              Next →
+            </button>
+            <button className="btn-primary" onClick={pushKnowHostBankQuestion}>Push This Question</button>
+          </div>
+        </div>
+
+        <div className="card">
+          <p className="card-label">Or Ask a Custom Question</p>
           <input
             type="text"
             placeholder="Question about you"
@@ -715,15 +871,23 @@ function HostControls() {
             onChange={(e) => setKnowHostAnswerInput(e.target.value)}
             style={{ width: "100%", marginBottom: 10 }}
           />
-          <button className="btn-primary" onClick={pushKnowHostQuestion}>Push New Question</button>
+          <button className="btn-primary" onClick={pushCustomKnowHostQuestion}>Push Custom Question</button>
         </div>
 
-        {knowHost?.questionText && (
+        {knowHost?.prompt && (
           <>
             <div className="card">
-              <p className="card-label">Current Question</p>
-              <p style={{ fontSize: 19, fontWeight: 700, marginTop: 0 }}>{knowHost.questionText}</p>
-              <p style={{ color: "var(--muted)" }}>Correct answer: {knowHost.correctAnswer || "(not set)"}</p>
+              <p className="card-label">Current Question ({knowHost.type})</p>
+              <p style={{ fontSize: 19, fontWeight: 700, marginTop: 0 }}>{knowHost.prompt}</p>
+              {knowHost.type === "text" && (
+                <p style={{ color: "var(--muted)" }}>Correct answer: {knowHost.answer || "(not set)"}</p>
+              )}
+              {(knowHost.type === "rank" || knowHost.type === "pick-rank") && (
+                <p style={{ color: "var(--muted)" }}>Correct order: {(knowHost.answerOrder || []).join(" → ")}</p>
+              )}
+              {knowHost.type === "mcq" && (
+                <p style={{ color: "var(--muted)" }}>Correct: {knowHost.options?.[knowHost.correctIndex]}</p>
+              )}
               <div className="form-row" style={{ justifyContent: "flex-start" }}>
                 <button className="btn-good" onClick={() => setKnowHostAnswersOpen(true)}>Open Answers</button>
                 <button className="btn-bad" onClick={() => setKnowHostAnswersOpen(false)}>Lock Answers</button>
@@ -743,16 +907,56 @@ function HostControls() {
             <div className="card">
               <p className="card-label">Answers Received</p>
               {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
-              {players.map((p) => (
-                <div key={p.id} className="answer-row">
-                  <Avatar avatarId={p.avatarId} size="sm" />
-                  <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
-                  <div style={{ flex: 2, color: khAnswers[p.id] ? "var(--text)" : "var(--muted)" }}>
-                    {khAnswers[p.id] || "no answer yet"}
+              {players.map((p) => {
+                const ans = khAnswers[p.id];
+                const hasAnswer = ans !== undefined && ans !== null && ans !== "";
+                const autoScore = computeKnowHostScore(knowHost, ans);
+                let displayAns = "no answer yet";
+                if (hasAnswer) {
+                  if (Array.isArray(ans)) displayAns = ans.join(" → ");
+                  else if (knowHost.type === "mcq") displayAns = knowHost.options?.[ans] ?? String(ans);
+                  else displayAns = String(ans);
+                }
+                return (
+                  <div key={p.id} className="answer-row">
+                    <Avatar avatarId={p.avatarId} size="sm" />
+                    <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                    <div style={{ flex: 2, color: hasAnswer ? "var(--text)" : "var(--muted)" }}>
+                      {displayAns}
+                    </div>
+                    {autoScore !== null ? (
+                      <button
+                        className="btn-good"
+                        disabled={!hasAnswer}
+                        onClick={() => awardKnowHostPoint(p.id, autoScore)}
+                      >
+                        Award {autoScore} pt{autoScore === 1 ? "" : "s"}
+                      </button>
+                    ) : (
+                      <>
+                        <input
+                          type="number"
+                          placeholder="pts"
+                          style={{ width: 56 }}
+                          value={pointInputs[p.id] || ""}
+                          onChange={(e) => setPointInputs({ ...pointInputs, [p.id]: e.target.value })}
+                        />
+                        <button
+                          className="btn-good"
+                          onClick={() => {
+                            const amt = parseInt(pointInputs[p.id] || "0", 10);
+                            if (!amt) return;
+                            awardKnowHostPoint(p.id, amt);
+                            setPointInputs({ ...pointInputs, [p.id]: "" });
+                          }}
+                        >
+                          Award
+                        </button>
+                      </>
+                    )}
                   </div>
-                  <button className="btn-good" onClick={() => awardKnowHostPoint(p.id)}>+1</button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
