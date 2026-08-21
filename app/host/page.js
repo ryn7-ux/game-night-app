@@ -8,6 +8,9 @@ import {
   revealRound1,
   awardRound1Points,
   addLeaderboardPoints,
+  addGameScore,
+  resetGameScore,
+  finalizeGameScores,
   clearRound1Answers,
   resetRound1Scores,
   removePlayer,
@@ -217,6 +220,59 @@ function computeKnowHostScore(q, answer) {
     return answer === q.correctIndex ? q.maxPoints || 1 : 0;
   }
   return null;
+}
+
+// Shared placement math: groups playerIds into tiers by their raw in-game score
+// (ties share a tier), then converts tiers into fixed leaderboard points that
+// scale with player count - top tier gets N points, next gets N minus that
+// tier's size, and so on. Mirrors what finalizeGameScores does server-side.
+function buildTiers(playerIds, scoresMap) {
+  const withScores = playerIds.map((id) => ({ id, score: scoresMap[id] || 0 }));
+  withScores.sort((a, b) => b.score - a.score);
+  const tiers = [];
+  let i = 0;
+  while (i < withScores.length) {
+    const score = withScores[i].score;
+    const tier = [];
+    while (i < withScores.length && withScores[i].score === score) {
+      tier.push(withScores[i].id);
+      i++;
+    }
+    tiers.push(tier);
+  }
+  return tiers;
+}
+
+function tiersToPoints(tiers) {
+  const total = tiers.reduce((sum, t) => sum + t.length, 0);
+  let pts = total;
+  const map = {};
+  for (const tier of tiers) {
+    for (const id of tier) map[id] = pts;
+    pts -= tier.length;
+  }
+  return map;
+}
+
+// Same idea but for the 2-team battle: rank the teams (A/B) by score, tie if equal,
+// then expand each team-tier into its member playerIds.
+function buildTeamTiers(playerIds, assignments, teamScores) {
+  const teams = ["A", "B"];
+  const scoreOf = (t) => teamScores[t] || 0;
+  const sortedTeams = [...teams].sort((a, b) => scoreOf(b) - scoreOf(a));
+  const tiers = [];
+  let i = 0;
+  while (i < sortedTeams.length) {
+    const score = scoreOf(sortedTeams[i]);
+    const grouped = [];
+    while (i < sortedTeams.length && scoreOf(sortedTeams[i]) === score) {
+      grouped.push(sortedTeams[i]);
+      i++;
+    }
+    const tierPlayers = playerIds.filter((id) => grouped.includes(assignments[id]));
+    if (tierPlayers.length) tiers.push(tierPlayers);
+  }
+  return tiers;
 }
 
 const PARTNER_QUESTIONS = [
@@ -555,14 +611,15 @@ function HostControls() {
   const answers = round1?.answers || {};
   const scores = round1?.scores || {};
 
+  const triviaTiers = buildTiers(players.map((p) => p.id), scores);
+  const triviaPointsMap = tiersToPoints(triviaTiers);
   const standings = [...players]
-    .map((p) => ({ ...p, score: scores[p.id] || 0 }))
-    .sort((a, b) => b.score - a.score)
-    .map((p, i, arr) => ({ ...p, points: arr.length - i }));
+    .map((p) => ({ ...p, score: scores[p.id] || 0, points: triviaPointsMap[p.id] || 0 }))
+    .sort((a, b) => b.score - a.score);
 
   async function finalizeRound() {
     if (players.length === 0 || roundFinalized) return;
-    await Promise.all(standings.map((s) => addLeaderboardPoints(s.id, s.points)));
+    await finalizeGameScores("trivia", triviaTiers);
     await resetRound1Scores();
     setRoundFinalized(true);
   }
@@ -795,6 +852,38 @@ function HostControls() {
             </div>
           </div>
         )}
+
+        {(() => {
+          const sbScores = spellingBee?.scores || {};
+          const sbTiers = buildTiers(players.map((p) => p.id), sbScores);
+          const sbPointsMap = tiersToPoints(sbTiers);
+          const sbStandings = [...players].sort((a, b) => (sbScores[b.id] || 0) - (sbScores[a.id] || 0));
+          return (
+            <div className="card">
+              <p className="card-label">Spelling Bee Standings</p>
+              {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
+              {sbStandings.map((p) => (
+                <div key={p.id} className="answer-row">
+                  <Avatar avatarId={p.avatarId} size="sm" />
+                  <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                  <div style={{ width: 110, textAlign: "center", color: "var(--muted)" }}>{sbScores[p.id] || 0} in-game pts</div>
+                  <div style={{ width: 140, textAlign: "center", fontWeight: 700, color: "var(--good)" }}>+{sbPointsMap[p.id] || 0} leaderboard</div>
+                </div>
+              ))}
+              <button
+                className="btn-good"
+                style={{ marginTop: 12 }}
+                disabled={players.length === 0}
+                onClick={async () => {
+                  await finalizeGameScores("spelling-bee", sbTiers);
+                  await resetGameScore("spellingBee");
+                }}
+              >
+                🏆 Finalize & Award Leaderboard Points
+              </button>
+            </div>
+          );
+        })()}
       </div>
     );
   }
@@ -960,6 +1049,41 @@ function HostControls() {
             </div>
           </>
         )}
+
+        {(() => {
+          const khScores = knowHost?.scores || {};
+          const khTiers = buildTiers(players.map((p) => p.id), khScores);
+          const khPointsMap = tiersToPoints(khTiers);
+          const khStandings = [...players].sort((a, b) => (khScores[b.id] || 0) - (khScores[a.id] || 0));
+          return (
+            <div className="card">
+              <p className="card-label">Know Your Host Standings</p>
+              <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
+                Finalize once you're done with all the questions for the night - this ranks everyone by their total across every question and awards fixed leaderboard points.
+              </p>
+              {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
+              {khStandings.map((p) => (
+                <div key={p.id} className="answer-row">
+                  <Avatar avatarId={p.avatarId} size="sm" />
+                  <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                  <div style={{ width: 110, textAlign: "center", color: "var(--muted)" }}>{khScores[p.id] || 0} in-game pts</div>
+                  <div style={{ width: 140, textAlign: "center", fontWeight: 700, color: "var(--good)" }}>+{khPointsMap[p.id] || 0} leaderboard</div>
+                </div>
+              ))}
+              <button
+                className="btn-good"
+                style={{ marginTop: 12 }}
+                disabled={players.length === 0}
+                onClick={async () => {
+                  await finalizeGameScores("know-your-host", khTiers);
+                  await resetGameScore("knowHost");
+                }}
+              >
+                🏆 Finalize & Award Leaderboard Points
+              </button>
+            </div>
+          );
+        })()}
       </div>
     );
   }
@@ -1055,14 +1179,14 @@ function HostControls() {
                         <p style={{ margin: 0, flex: 1 }}>
                           {nameOf(pair.a)} said "{aAns.own || "-"}", guessed "{aAns.guess || "-"}"
                         </p>
-                        <button className="btn-good" onClick={() => { addLeaderboardPoints(pair.a, 1); addLeaderboardPoints(pair.b, 1); }}>Match ✓</button>
+                        <button className="btn-good" onClick={() => awardPartnerMatch(pair.a, pair.b)}>Match ✓</button>
                         <button className="btn-bad">No Match</button>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
                         <p style={{ margin: 0, flex: 1 }}>
                           {nameOf(pair.b)} said "{bAns.own || "-"}", guessed "{bAns.guess || "-"}"
                         </p>
-                        <button className="btn-good" onClick={() => { addLeaderboardPoints(pair.a, 1); addLeaderboardPoints(pair.b, 1); }}>Match ✓</button>
+                        <button className="btn-good" onClick={() => awardPartnerMatch(pair.a, pair.b)}>Match ✓</button>
                         <button className="btn-bad">No Match</button>
                       </div>
                     </>
@@ -1072,6 +1196,38 @@ function HostControls() {
             })}
           </div>
         )}
+
+        {(() => {
+          const pgScores = partnerGame?.scores || {};
+          const pgTiers = buildTiers(players.map((p) => p.id), pgScores);
+          const pgPointsMap = tiersToPoints(pgTiers);
+          const pgStandings = [...players].sort((a, b) => (pgScores[b.id] || 0) - (pgScores[a.id] || 0));
+          return (
+            <div className="card">
+              <p className="card-label">Know Your Partner Standings</p>
+              {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
+              {pgStandings.map((p) => (
+                <div key={p.id} className="answer-row">
+                  <Avatar avatarId={p.avatarId} size="sm" />
+                  <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                  <div style={{ width: 110, textAlign: "center", color: "var(--muted)" }}>{pgScores[p.id] || 0} matches</div>
+                  <div style={{ width: 140, textAlign: "center", fontWeight: 700, color: "var(--good)" }}>+{pgPointsMap[p.id] || 0} leaderboard</div>
+                </div>
+              ))}
+              <button
+                className="btn-good"
+                style={{ marginTop: 12 }}
+                disabled={players.length === 0}
+                onClick={async () => {
+                  await finalizeGameScores("know-your-partner", pgTiers);
+                  await resetGameScore("partnerGame");
+                }}
+              >
+                🏆 Finalize & Award Leaderboard Points
+              </button>
+            </div>
+          );
+        })()}
       </div>
     );
   }
@@ -1159,6 +1315,25 @@ function HostControls() {
           </div>
           <button className="btn-secondary" onClick={() => resetTeamScores()} style={{ marginTop: 12 }}>Reset Scores</button>
         </div>
+
+        <div className="card">
+          <p className="card-label">Finalize Team Battle</p>
+          <p style={{ color: "var(--muted)", fontSize: 13 }}>
+            Winning team's players all get the top placement points, the losing team gets the next tier down - same fixed scale as every other game.
+          </p>
+          <button
+            className="btn-good"
+            disabled={players.length === 0}
+            onClick={async () => {
+              const teamTiers = buildTeamTiers(players.map((p) => p.id), assignments, teamScores);
+              if (teamTiers.length === 0) return;
+              await finalizeGameScores("guess-the-real-place", teamTiers);
+              await resetTeamScores();
+            }}
+          >
+            🏆 Finalize & Award Leaderboard Points
+          </button>
+        </div>
       </div>
     );
   }
@@ -1219,12 +1394,47 @@ function HostControls() {
                   <div style={{ flex: 2, color: gpAnswers[p.id] ? "var(--text)" : "var(--muted)" }}>
                     {gpAnswers[p.id] || "no guess yet"}
                   </div>
-                  <button className="btn-good" onClick={() => addLeaderboardPoints(p.id, 1)}>+1</button>
+                  <button className="btn-good" onClick={() => addGameScore("guessPhoto", p.id, 1)}>+1</button>
                 </div>
               ))}
             </div>
           </>
         )}
+
+        {(() => {
+          const gpScores = guessPhoto?.scores || {};
+          const gpTiers = buildTiers(players.map((p) => p.id), gpScores);
+          const gpPointsMap = tiersToPoints(gpTiers);
+          const gpStandings = [...players].sort((a, b) => (gpScores[b.id] || 0) - (gpScores[a.id] || 0));
+          return (
+            <div className="card">
+              <p className="card-label">Guess the Photo Standings</p>
+              <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
+                Finalize once you're done running photo rounds for the night - ranks everyone by total correct guesses.
+              </p>
+              {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
+              {gpStandings.map((p) => (
+                <div key={p.id} className="answer-row">
+                  <Avatar avatarId={p.avatarId} size="sm" />
+                  <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                  <div style={{ width: 110, textAlign: "center", color: "var(--muted)" }}>{gpScores[p.id] || 0} correct</div>
+                  <div style={{ width: 140, textAlign: "center", fontWeight: 700, color: "var(--good)" }}>+{gpPointsMap[p.id] || 0} leaderboard</div>
+                </div>
+              ))}
+              <button
+                className="btn-good"
+                style={{ marginTop: 12 }}
+                disabled={players.length === 0}
+                onClick={async () => {
+                  await finalizeGameScores("guess-the-photo", gpTiers);
+                  await resetGameScore("guessPhoto");
+                }}
+              >
+                🏆 Finalize & Award Leaderboard Points
+              </button>
+            </div>
+          );
+        })()}
       </div>
     );
   }
@@ -1296,6 +1506,41 @@ function HostControls() {
             </div>
           </>
         )}
+
+        {(() => {
+          const wsScores = whoSent?.scores || {};
+          const wsTiers = buildTiers(players.map((p) => p.id), wsScores);
+          const wsPointsMap = tiersToPoints(wsTiers);
+          const wsStandings = [...players].sort((a, b) => (wsScores[b.id] || 0) - (wsScores[a.id] || 0));
+          return (
+            <div className="card">
+              <p className="card-label">Who Sent This Standings</p>
+              <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
+                Finalize once you're done posting images for the night - ranks everyone by total correct guesses.
+              </p>
+              {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
+              {wsStandings.map((p) => (
+                <div key={p.id} className="answer-row">
+                  <Avatar avatarId={p.avatarId} size="sm" />
+                  <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
+                  <div style={{ width: 110, textAlign: "center", color: "var(--muted)" }}>{wsScores[p.id] || 0} correct</div>
+                  <div style={{ width: 140, textAlign: "center", fontWeight: 700, color: "var(--good)" }}>+{wsPointsMap[p.id] || 0} leaderboard</div>
+                </div>
+              ))}
+              <button
+                className="btn-good"
+                style={{ marginTop: 12 }}
+                disabled={players.length === 0}
+                onClick={async () => {
+                  await finalizeGameScores("who-sent-this", wsTiers);
+                  await resetGameScore("whoSent");
+                }}
+              >
+                🏆 Finalize & Award Leaderboard Points
+              </button>
+            </div>
+          );
+        })()}
       </div>
     );
   }
