@@ -10,6 +10,8 @@ import {
   addLeaderboardPoints,
   listenLeaderboardVisible,
   setLeaderboardVisible,
+  listenRoundScoresVisible,
+  setRoundScoresVisible,
   addGameScore,
   resetGameScore,
   finalizeGameScores,
@@ -427,6 +429,7 @@ function HostControls() {
 
   const [showPlayerView, setShowPlayerView] = useState(false);
   const [leaderboardVisible, setLeaderboardVisibleState] = useState(false);
+  const [roundScoresVisible, setRoundScoresVisibleState] = useState(false);
 
   const playerViewWidget = (
     <div
@@ -447,6 +450,13 @@ function HostControls() {
         style={{ borderRadius: 999, padding: "10px 18px" }}
       >
         {leaderboardVisible ? "📊 Showing on Player Screens" : "📊 Push Leaderboard"}
+      </button>
+      <button
+        className={roundScoresVisible ? "btn-good" : "btn-secondary"}
+        onClick={() => setRoundScoresVisible(!roundScoresVisible)}
+        style={{ borderRadius: 999, padding: "10px 18px" }}
+      >
+        {roundScoresVisible ? "🔥 Hide Round Scores" : "🔥 Push Round Scores"}
       </button>
       {showPlayerView ? (
         <div
@@ -505,6 +515,7 @@ function HostControls() {
     const unsubGP = listenGuessPhoto(setGuessPhoto);
     const unsubWS = listenWhoSent(setWhoSent);
     const unsubLV = listenLeaderboardVisible(setLeaderboardVisibleState);
+    const unsubRSV = listenRoundScoresVisible(setRoundScoresVisibleState);
     return () => {
       unsubP();
       unsubR();
@@ -515,6 +526,7 @@ function HostControls() {
       unsubGP();
       unsubWS();
       unsubLV();
+      unsubRSV();
     };
   }, []);
 
