@@ -227,8 +227,27 @@ export default function PlayPage() {
         </div>
       )}
       {leaderboardVisible && (
-        <div style={{ position: "absolute", top: spectator ? 44 : 20, width: "100%" }}>
-          <Leaderboard />
+        <div
+          style={{
+            position: "fixed",
+            top: spectator ? 34 : 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "#05070f",
+            zIndex: 500,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            overflowY: "auto",
+          }}
+        >
+          <h2 style={{ marginBottom: 16 }}>🏆 Leaderboard</h2>
+          <div style={{ width: "100%", maxWidth: 600 }}>
+            <Leaderboard />
+          </div>
         </div>
       )}
 
