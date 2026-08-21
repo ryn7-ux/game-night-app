@@ -8,6 +8,7 @@ import {
   listenSelfPlayer,
   listenCurrentGame,
   listenLeaderboardVisible,
+  listenRoundScoresVisible,
   listenSpellingBee,
   listenPlayers,
   listenKnowHost,
@@ -36,6 +37,7 @@ export default function PlayPage() {
   const [players, setPlayers] = useState([]);
   const [spectator, setSpectator] = useState(false);
   const [leaderboardVisible, setLeaderboardVisible] = useState(false);
+  const [roundScoresVisible, setRoundScoresVisible] = useState(false);
 
   const [knowHost, setKnowHost] = useState(null);
   const [knowHostAnswer, setKnowHostAnswer] = useState("");
@@ -70,6 +72,7 @@ export default function PlayPage() {
     const unsub = listenRound1(setRound1);
     const unsubCG = listenCurrentGame(setCurrentGameState);
     const unsubLV = listenLeaderboardVisible(setLeaderboardVisible);
+    const unsubRSV = listenRoundScoresVisible(setRoundScoresVisible);
     const unsubSB = listenSpellingBee(setSpellingBeeState);
     const unsubP = listenPlayers(setPlayers);
     const unsubKH = listenKnowHost(setKnowHost);
@@ -90,6 +93,7 @@ export default function PlayPage() {
       unsub();
       unsubCG();
       unsubLV();
+      unsubRSV();
       unsubSB();
       unsubP();
       unsubKH();
@@ -250,6 +254,59 @@ export default function PlayPage() {
           </div>
         </div>
       )}
+
+      {roundScoresVisible && currentGame && (() => {
+        let title = "";
+        let entries = [];
+        if (currentGame === "guess-the-real-place") {
+          title = "🗺️ Team Scores";
+          entries = [
+            { name: teamGame?.teamNames?.A || "Team A", score: teamGame?.scores?.A || 0 },
+            { name: teamGame?.teamNames?.B || "Team B", score: teamGame?.scores?.B || 0 },
+          ];
+        } else {
+          const map = {
+            trivia: ["🧠 Trivia", round1?.scores],
+            "spelling-bee": ["🐝 Spelling Bee", spellingBee?.scores],
+            "know-your-host": ["🎙️ Know Your Host", knowHost?.scores],
+            "know-your-partner": ["💞 Know Your Partner", partnerGame?.scores],
+            "guess-the-photo": ["📸 Guess the Photo", guessPhoto?.scores],
+            "who-sent-this": ["🕵️ Who Sent This?", whoSent?.scores],
+          };
+          const found = map[currentGame];
+          if (!found) return null;
+          title = found[0];
+          const scores = found[1] || {};
+          entries = [...players]
+            .map((p) => ({ name: p.name, score: scores[p.id] || 0 }))
+            .sort((a, b) => b.score - a.score);
+        }
+        return (
+          <div
+            style={{
+              position: "fixed",
+              top: spectator ? 34 : 0,
+              left: 0,
+              right: 0,
+              zIndex: 400,
+              background: "#111a3d",
+              borderBottom: "1px solid #333",
+              padding: "10px 16px",
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+              overflowX: "auto",
+            }}
+          >
+            <span style={{ fontWeight: 800, fontSize: 13, whiteSpace: "nowrap" }}>{title}</span>
+            {entries.map((e, i) => (
+              <span key={i} style={{ whiteSpace: "nowrap", fontSize: 13 }}>
+                {e.name}: {e.score}
+              </span>
+            ))}
+          </div>
+        );
+      })()}
 
       {!currentGame && <h2 style={{ color: "var(--muted)" }}>Waiting for the host to start...</h2>}
 
