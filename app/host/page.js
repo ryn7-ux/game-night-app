@@ -8,6 +8,8 @@ import {
   revealRound1,
   awardRound1Points,
   addLeaderboardPoints,
+  listenLeaderboardVisible,
+  setLeaderboardVisible,
   addGameScore,
   resetGameScore,
   finalizeGameScores,
@@ -424,9 +426,28 @@ function HostControls() {
   const [whoSentSenderId, setWhoSentSenderId] = useState("");
 
   const [showPlayerView, setShowPlayerView] = useState(false);
+  const [leaderboardVisible, setLeaderboardVisibleState] = useState(false);
 
   const playerViewWidget = (
-    <div style={{ position: "fixed", bottom: 16, right: 16, zIndex: 200 }}>
+    <div
+      style={{
+        position: "fixed",
+        bottom: 16,
+        right: 16,
+        zIndex: 200,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: 10,
+      }}
+    >
+      <button
+        className={leaderboardVisible ? "btn-good" : "btn-primary"}
+        onClick={() => setLeaderboardVisible(!leaderboardVisible)}
+        style={{ borderRadius: 999, padding: "10px 18px" }}
+      >
+        {leaderboardVisible ? "📊 Showing on Player Screens" : "📊 Push Leaderboard"}
+      </button>
       {showPlayerView ? (
         <div
           style={{
@@ -483,6 +504,7 @@ function HostControls() {
     const unsubTG = listenTeamGame(setTeamGame);
     const unsubGP = listenGuessPhoto(setGuessPhoto);
     const unsubWS = listenWhoSent(setWhoSent);
+    const unsubLV = listenLeaderboardVisible(setLeaderboardVisibleState);
     return () => {
       unsubP();
       unsubR();
@@ -492,6 +514,7 @@ function HostControls() {
       unsubTG();
       unsubGP();
       unsubWS();
+      unsubLV();
     };
   }, []);
 
