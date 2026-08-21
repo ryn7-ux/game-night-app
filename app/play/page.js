@@ -7,6 +7,7 @@ import {
   submitRound1Answer,
   listenSelfPlayer,
   listenCurrentGame,
+  listenLeaderboardVisible,
   listenSpellingBee,
   listenPlayers,
   listenKnowHost,
@@ -34,6 +35,7 @@ export default function PlayPage() {
   const [spellingBee, setSpellingBeeState] = useState(null);
   const [players, setPlayers] = useState([]);
   const [spectator, setSpectator] = useState(false);
+  const [leaderboardVisible, setLeaderboardVisible] = useState(false);
 
   const [knowHost, setKnowHost] = useState(null);
   const [knowHostAnswer, setKnowHostAnswer] = useState("");
@@ -67,6 +69,7 @@ export default function PlayPage() {
     setPlayerId(id);
     const unsub = listenRound1(setRound1);
     const unsubCG = listenCurrentGame(setCurrentGameState);
+    const unsubLV = listenLeaderboardVisible(setLeaderboardVisible);
     const unsubSB = listenSpellingBee(setSpellingBeeState);
     const unsubP = listenPlayers(setPlayers);
     const unsubKH = listenKnowHost(setKnowHost);
@@ -86,6 +89,7 @@ export default function PlayPage() {
     return () => {
       unsub();
       unsubCG();
+      unsubLV();
       unsubSB();
       unsubP();
       unsubKH();
@@ -222,9 +226,11 @@ export default function PlayPage() {
           👁 PLAYER VIEW PREVIEW — HOST ONLY, NOT A REAL SUBMISSION
         </div>
       )}
-      <div style={{ position: "absolute", top: spectator ? 44 : 20, width: "100%" }}>
-        <Leaderboard />
-      </div>
+      {leaderboardVisible && (
+        <div style={{ position: "absolute", top: spectator ? 44 : 20, width: "100%" }}>
+          <Leaderboard />
+        </div>
+      )}
 
       {!currentGame && <h2 style={{ color: "var(--muted)" }}>Waiting for the host to start...</h2>}
 
