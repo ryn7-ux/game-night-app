@@ -265,7 +265,25 @@ const KNOW_HOST_QUESTIONS = [
     ],
     maxPoints: 5,
   },
+  {
+    id: "first-car-age",
+    type: "text",
+    prompt: "At what age did I drive my first car?",
+    answer: "14",
+  },
+  {
+    id: "youtube-artists",
+    type: "guess-list",
+    prompt: "Name my top 5 favorite artists on YouTube Music. Send as many guesses as you want (up to 5) - order matters for bonus points!",
+    maxGuesses: 5,
+    answerOrder: ["Bruno Mars", "Drake", "OneRepublic", "Charlie Puth", "KSI"],
+    maxPoints: 10,
+  },
 ];
+
+function normalizeGuess(s) {
+  return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 
 function computeKnowHostScore(q, answer) {
   if (!q || answer === undefined || answer === null || answer === "") return null;
@@ -283,6 +301,18 @@ function computeKnowHostScore(q, answer) {
     if (!Array.isArray(answer)) return 0;
     let score = 0;
     answer.forEach((item, i) => {
+      if (order.includes(item)) score += 1;
+      if (order[i] === item) score += 1;
+    });
+    return score;
+  }
+  if (q.type === "guess-list") {
+    const order = (q.answerOrder || []).map(normalizeGuess);
+    if (!Array.isArray(answer)) return 0;
+    let score = 0;
+    answer.forEach((raw, i) => {
+      const item = normalizeGuess(raw);
+      if (!item) return;
       if (order.includes(item)) score += 1;
       if (order[i] === item) score += 1;
     });
@@ -1057,6 +1087,12 @@ function HostControls() {
               )}
             </>
           )}
+          {bankQ.type === "guess-list" && (
+            <>
+              <p style={{ color: "var(--good)" }}>Correct order: {bankQ.answerOrder.join(" → ")} ({bankQ.maxPoints} pts)</p>
+              <p style={{ color: "var(--muted)", fontSize: 13 }}>Players can send up to {bankQ.maxGuesses} free-text guesses.</p>
+            </>
+          )}
           <div className="form-row" style={{ justifyContent: "flex-start", marginTop: 10 }}>
             <button className="btn-secondary" onClick={prevKnowHostQuestion} disabled={knowHostQIndex <= 0}>
               ← Prev
@@ -1124,6 +1160,9 @@ function HostControls() {
                     </p>
                   )}
                 </>
+              )}
+              {knowHost.type === "guess-list" && (
+                <p style={{ color: "var(--muted)" }}>Correct order: {(knowHost.answerOrder || []).join(" → ")}</p>
               )}
               <div className="form-row" style={{ justifyContent: "flex-start" }}>
                 <button className="btn-good" onClick={() => setKnowHostAnswersOpen(true)}>Open Answers</button>
