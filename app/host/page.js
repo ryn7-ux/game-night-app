@@ -245,6 +245,26 @@ const KNOW_HOST_QUESTIONS = [
     ],
     maxPoints: 6,
   },
+  {
+    id: "chocolate-rank",
+    type: "rank",
+    prompt: "Rank these chocolate bars from my favorite to least favorite:",
+    items: [
+      "Snickers",
+      "Bounty",
+      "Galaxy Smooth Milk",
+      "Dairy Milk",
+      "Flake",
+    ],
+    answerOrder: [
+      "Snickers",
+      "Galaxy Smooth Milk",
+      "Flake",
+      "Bounty",
+      "Dairy Milk",
+    ],
+    maxPoints: 5,
+  },
 ];
 
 function computeKnowHostScore(q, answer) {
