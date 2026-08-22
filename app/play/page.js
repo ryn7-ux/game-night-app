@@ -13,6 +13,7 @@ import {
   listenPlayers,
   listenKnowHost,
   submitKnowHostAnswer,
+  tryClaimKnowHostEasterEgg,
   listenPartnerGame,
   submitPartnerAnswer,
   listenTeamGame,
@@ -43,6 +44,10 @@ export default function PlayPage() {
   const [knowHostAnswer, setKnowHostAnswer] = useState("");
   const [knowHostOrder, setKnowHostOrder] = useState([]);
   const [knowHostSubmitted, setKnowHostSubmitted] = useState(false);
+  const [knowHostTierAssign, setKnowHostTierAssign] = useState({});
+  const [knowHostEasterEggOpen, setKnowHostEasterEggOpen] = useState(false);
+  const [knowHostEasterEggGuess, setKnowHostEasterEggGuess] = useState("");
+  const [knowHostEasterEggResult, setKnowHostEasterEggResult] = useState(null);
 
   const [partnerGame, setPartnerGame] = useState(null);
   const [partnerOwnAnswer, setPartnerOwnAnswer] = useState("");
@@ -116,6 +121,10 @@ export default function PlayPage() {
     setKnowHostSubmitted(false);
     setKnowHostAnswer("");
     setKnowHostOrder([]);
+    setKnowHostTierAssign({});
+    setKnowHostEasterEggOpen(false);
+    setKnowHostEasterEggGuess("");
+    setKnowHostEasterEggResult(null);
   }, [knowHost?.prompt]);
 
   useEffect(() => {
@@ -167,6 +176,50 @@ export default function PlayPage() {
     if (!playerId) return;
     await submitKnowHostAnswer(playerId, i);
     setKnowHostSubmitted(true);
+  }
+
+  function cycleKnowHostTier(item) {
+    setKnowHostTierAssign((prev) => {
+      const tiers = knowHost?.tiers || [];
+      const order = tiers.map((t) => t.id);
+      const counts = {};
+      order.forEach((id) => (counts[id] = 0));
+      Object.entries(prev).forEach(([it, tid]) => {
+        if (it !== item && counts[tid] !== undefined) counts[tid]++;
+      });
+      const current = prev[item];
+      const startIdx = current ? order.indexOf(current) + 1 : 0;
+      for (let i = 0; i < order.length; i++) {
+        const idx = (startIdx + i) % order.length;
+        const tid = order[idx];
+        const cap = tiers.find((t) => t.id === tid)?.capacity || 0;
+        if (counts[tid] < cap) {
+          return { ...prev, [item]: tid };
+        }
+      }
+      const next = { ...prev };
+      delete next[item];
+      return next;
+    });
+  }
+
+  async function handleKnowHostTierSubmit() {
+    if (!playerId) return;
+    await submitKnowHostAnswer(playerId, knowHostTierAssign);
+    setKnowHostSubmitted(true);
+  }
+
+  async function handleKnowHostEasterEggSubmit(e) {
+    e.preventDefault();
+    if (!playerId || !knowHost?.easterEgg) return;
+    const guess = knowHostEasterEggGuess.trim().toLowerCase();
+    const correct = guess === (knowHost.easterEgg.answer || "").trim().toLowerCase();
+    if (!correct) {
+      setKnowHostEasterEggResult("wrong");
+      return;
+    }
+    const claimed = await tryClaimKnowHostEasterEgg(playerId, knowHost.easterEgg.points);
+    setKnowHostEasterEggResult(claimed ? "found" : "already");
   }
 
   async function handlePartnerSubmit(e) {
@@ -447,6 +500,88 @@ export default function PlayPage() {
                 </div>
               )}
 
+              {knowHost.type === "tier" && !knowHost.revealed && knowHost.answersOpen && !knowHostSubmitted && (
+                <div style={{ marginTop: 12 }}>
+                  <p style={{ color: "var(--muted)", fontSize: 13 }}>
+                    Tap a movie to cycle it through the tiers: {(knowHost.tiers || []).map((t) => t.label).join(" → ")}.
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                    {(knowHost.items || []).map((item) => {
+                      const tid = knowHostTierAssign[item];
+                      const label = tid ? knowHost.tiers?.find((t) => t.id === tid)?.label : null;
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          disabled={spectator}
+                          onClick={() => cycleKnowHostTier(item)}
+                          className={tid ? "btn-primary" : "btn-secondary"}
+                          style={{ fontSize: 13 }}
+                        >
+                          {item}{label ? ` (${label})` : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button
+                    className="btn-good"
+                    style={{ marginTop: 12 }}
+                    disabled={
+                      spectator ||
+                      Object.keys(knowHostTierAssign).length !== (knowHost.items?.length || 0)
+                    }
+                    onClick={handleKnowHostTierSubmit}
+                  >
+                    Submit Tiers
+                  </button>
+
+                  {knowHost.easterEgg && (
+                    <div style={{ marginTop: 22, textAlign: "right" }}>
+                      <button
+                        type="button"
+                        onClick={() => setKnowHostEasterEggOpen((v) => !v)}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "rgba(255,255,255,0.18)",
+                          fontSize: 12,
+                          cursor: "pointer",
+                          padding: 4,
+                        }}
+                      >
+                        ⭐
+                      </button>
+                      {knowHostEasterEggOpen && (
+                        <form onSubmit={handleKnowHostEasterEggSubmit} style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                          <input
+                            type="text"
+                            value={knowHostEasterEggGuess}
+                            onChange={(e) => setKnowHostEasterEggGuess(e.target.value)}
+                            placeholder={knowHost.easterEgg.prompt}
+                            disabled={spectator}
+                            style={{ flex: 1, fontSize: 12 }}
+                          />
+                          <button className="btn-secondary" type="submit" disabled={spectator} style={{ fontSize: 12 }}>
+                            Guess
+                          </button>
+                        </form>
+                      )}
+                      {knowHostEasterEggResult === "found" && (
+                        <p style={{ color: "var(--good)", fontSize: 12, marginTop: 4 }}>
+                          🎉 Found it! +{knowHost.easterEgg.points} pts
+                        </p>
+                      )}
+                      {knowHostEasterEggResult === "already" && (
+                        <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4 }}>Already claimed by someone.</p>
+                      )}
+                      {knowHostEasterEggResult === "wrong" && (
+                        <p style={{ color: "var(--bad)", fontSize: 12, marginTop: 4 }}>Not quite.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {!knowHost.revealed && knowHost.answersOpen && knowHostSubmitted && (
                 <p style={{ color: "var(--good)" }}>Answer locked in - waiting for everyone else...</p>
               )}
@@ -468,6 +603,16 @@ export default function PlayPage() {
                     <p style={{ fontSize: 22, fontWeight: 700, color: "var(--good)" }}>
                       {knowHost.options?.[knowHost.correctIndex]}
                     </p>
+                  )}
+                  {knowHost.type === "tier" && (
+                    <div style={{ fontSize: 14 }}>
+                      {(knowHost.tiers || []).map((t) => (
+                        <p key={t.id} style={{ margin: "4px 0" }}>
+                          <strong style={{ color: "var(--good)" }}>{t.label}:</strong>{" "}
+                          {(knowHost.items || []).filter((it) => knowHost.answerTiers?.[it] === t.id).join(", ")}
+                        </p>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
