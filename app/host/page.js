@@ -137,25 +137,51 @@ const KNOW_HOST_QUESTIONS = [
     prompt: "Who's on my lock screen?",
     answer: "Lando Norris or Ronaldo",
   },
-  {
-    id: "movies-rank",
-    type: "rank",
-    prompt: "Rank these movies from my favorite to least favorite:",
+    {
+    id: "malayalam-movies-tier",
+    type: "tier",
+    prompt: "Sort these Malayalam movies into my tiers:",
+    tiers: [
+      { id: "S", label: "S Tier", capacity: 1 },
+      { id: "good", label: "Good", capacity: 3 },
+      { id: "enjoyed", label: "Enjoyed", capacity: 3 },
+      { id: "meh", label: "Meh", capacity: 3 },
+      { id: "stop", label: "Please Stop", capacity: 2 },
+    ],
     items: [
-      "Spider-Man: Brand New Day",
-      "Project Hail Mary",
+      "Memories",
+      "Trance",
       "Mollywood Times",
-      "The Odyssey",
-      "Vaazha II: Biopic of a Billion Bros",
+      "Anjaam Pathira",
+      "Khalifa",
+      "Premam",
+      "Mukundan Unni Associates",
+      "Vaazha 2",
+      "Padakkalam",
+      "King Liar",
+      "Neerali",
+      "Hridayam",
     ],
-    answerOrder: [
-      "Spider-Man: Brand New Day",
-      "Project Hail Mary",
-      "Mollywood Times",
-      "The Odyssey",
-      "Vaazha II: Biopic of a Billion Bros",
-    ],
-    maxPoints: 5,
+    answerTiers: {
+      Memories: "S",
+      Trance: "good",
+      "Mollywood Times": "good",
+      "Anjaam Pathira": "good",
+      Khalifa: "enjoyed",
+      Premam: "enjoyed",
+      "Mukundan Unni Associates": "enjoyed",
+      "Vaazha 2": "meh",
+      Padakkalam: "meh",
+      "King Liar": "meh",
+      Neerali: "stop",
+      Hridayam: "stop",
+    },
+    maxPoints: 12,
+    easterEgg: {
+      prompt: "Best movie ever watched with the boys?",
+      answer: "sharknado",
+      points: 3,
+    },
   },
   {
     id: "athlete",
@@ -244,6 +270,15 @@ function computeKnowHostScore(q, answer) {
   }
   if (q.type === "mcq") {
     return answer === q.correctIndex ? q.maxPoints || 1 : 0;
+  }
+  if (q.type === "tier") {
+    const key = q.answerTiers || {};
+    if (!answer || typeof answer !== "object") return 0;
+    let score = 0;
+    Object.keys(key).forEach((item) => {
+      if (answer[item] === key[item]) score += 1;
+    });
+    return score;
   }
   return null;
 }
@@ -986,6 +1021,22 @@ function HostControls() {
               ))}
             </>
           )}
+          {bankQ.type === "tier" && (
+            <>
+              {bankQ.tiers.map((t) => (
+                <p key={t.id} style={{ color: "var(--good)", margin: "2px 0", fontSize: 13 }}>
+                  <strong>{t.label}:</strong>{" "}
+                  {bankQ.items.filter((it) => bankQ.answerTiers[it] === t.id).join(", ")}
+                </p>
+              ))}
+              <p style={{ color: "var(--muted)", fontSize: 13 }}>({bankQ.maxPoints} pts total)</p>
+              {bankQ.easterEgg && (
+                <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4 }}>
+                  🥚 Hidden side quest: "{bankQ.easterEgg.prompt}" → {bankQ.easterEgg.answer} ({bankQ.easterEgg.points} pts)
+                </p>
+              )}
+            </>
+          )}
           <div className="form-row" style={{ justifyContent: "flex-start", marginTop: 10 }}>
             <button className="btn-secondary" onClick={prevKnowHostQuestion} disabled={knowHostQIndex <= 0}>
               ← Prev
@@ -1034,6 +1085,26 @@ function HostControls() {
               {knowHost.type === "mcq" && (
                 <p style={{ color: "var(--muted)" }}>Correct: {knowHost.options?.[knowHost.correctIndex]}</p>
               )}
+              {knowHost.type === "tier" && (
+                <>
+                  {(knowHost.tiers || []).map((t) => (
+                    <p key={t.id} style={{ color: "var(--muted)", fontSize: 13 }}>
+                      <strong>{t.label}:</strong>{" "}
+                      {(knowHost.items || []).filter((it) => knowHost.answerTiers?.[it] === t.id).join(", ")}
+                    </p>
+                  ))}
+                  {knowHost.easterEgg && (
+                    <p style={{ color: "var(--muted)", fontSize: 12 }}>
+                      🥚 Side quest found by:{" "}
+                      {Object.keys(knowHost.easterEggClaims || {}).length === 0
+                        ? "no one yet"
+                        : Object.keys(knowHost.easterEggClaims || {})
+                            .map((pid) => players.find((p) => p.id === pid)?.name || pid)
+                            .join(", ")}
+                    </p>
+                  )}
+                </>
+              )}
               <div className="form-row" style={{ justifyContent: "flex-start" }}>
                 <button className="btn-good" onClick={() => setKnowHostAnswersOpen(true)}>Open Answers</button>
                 <button className="btn-bad" onClick={() => setKnowHostAnswersOpen(false)}>Lock Answers</button>
@@ -1061,6 +1132,10 @@ function HostControls() {
                 if (hasAnswer) {
                   if (Array.isArray(ans)) displayAns = ans.join(" → ");
                   else if (knowHost.type === "mcq") displayAns = knowHost.options?.[ans] ?? String(ans);
+                  else if (knowHost.type === "tier" && typeof ans === "object")
+                    displayAns = Object.entries(ans)
+                      .map(([item, tierId]) => `${item}: ${knowHost.tiers?.find((t) => t.id === tierId)?.label || tierId}`)
+                      .join(", ");
                   else displayAns = String(ans);
                 }
                 return (
