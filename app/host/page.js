@@ -197,6 +197,28 @@ const KNOW_HOST_QUESTIONS = [
     correctIndex: 3,
     maxPoints: 1,
   },
+  {
+    id: "leaders-rank",
+    type: "rank",
+    prompt: "Rank these leaders from most to least interesting to me:",
+    items: [
+      "Adolf Hitler",
+      "Kim Jong Un",
+      "Donald Trump",
+      "Genghis Khan",
+      "Pinarayi Vijayan",
+      "Narendra Modi",
+    ],
+    answerOrder: [
+      "Adolf Hitler",
+      "Kim Jong Un",
+      "Donald Trump",
+      "Genghis Khan",
+      "Pinarayi Vijayan",
+      "Narendra Modi",
+    ],
+    maxPoints: 6,
+  },
 ];
 
 function computeKnowHostScore(q, answer) {
