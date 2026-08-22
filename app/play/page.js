@@ -48,6 +48,7 @@ export default function PlayPage() {
   const [knowHostEasterEggOpen, setKnowHostEasterEggOpen] = useState(false);
   const [knowHostEasterEggGuess, setKnowHostEasterEggGuess] = useState("");
   const [knowHostEasterEggResult, setKnowHostEasterEggResult] = useState(null);
+  const [knowHostGuessList, setKnowHostGuessList] = useState(["", "", "", "", ""]);
 
   const [partnerGame, setPartnerGame] = useState(null);
   const [partnerOwnAnswer, setPartnerOwnAnswer] = useState("");
@@ -125,6 +126,7 @@ export default function PlayPage() {
     setKnowHostEasterEggOpen(false);
     setKnowHostEasterEggGuess("");
     setKnowHostEasterEggResult(null);
+    setKnowHostGuessList(["", "", "", "", ""]);
   }, [knowHost?.prompt]);
 
   useEffect(() => {
@@ -220,6 +222,22 @@ export default function PlayPage() {
     }
     const claimed = await tryClaimKnowHostEasterEgg(playerId, knowHost.easterEgg.points);
     setKnowHostEasterEggResult(claimed ? "found" : "already");
+  }
+
+  function updateKnowHostGuess(index, value) {
+    setKnowHostGuessList((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  async function handleKnowHostGuessListSubmit() {
+    if (!playerId) return;
+    const filled = knowHostGuessList.map((g) => g.trim()).filter((g) => g.length > 0);
+    if (filled.length === 0) return;
+    await submitKnowHostAnswer(playerId, filled);
+    setKnowHostSubmitted(true);
   }
 
   async function handlePartnerSubmit(e) {
@@ -582,6 +600,33 @@ export default function PlayPage() {
                 </div>
               )}
 
+              {knowHost.type === "guess-list" && !knowHost.revealed && knowHost.answersOpen && !knowHostSubmitted && (
+                <div style={{ marginTop: 12 }}>
+                  <p style={{ color: "var(--muted)", fontSize: 13 }}>
+                    Fill in as many as you want (up to {knowHost.maxGuesses || 5}). Order matters for bonus points.
+                  </p>
+                  {knowHostGuessList.map((g, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      value={g}
+                      onChange={(e) => updateKnowHostGuess(i, e.target.value)}
+                      placeholder={"Guess #" + (i + 1)}
+                      disabled={spectator}
+                      style={{ width: "100%", marginTop: 8 }}
+                    />
+                  ))}
+                  <button
+                    className="btn-good"
+                    style={{ marginTop: 12 }}
+                    disabled={spectator || knowHostGuessList.every((g) => !g.trim())}
+                    onClick={handleKnowHostGuessListSubmit}
+                  >
+                    Submit Guesses
+                  </button>
+                </div>
+              )}
+
               {!knowHost.revealed && knowHost.answersOpen && knowHostSubmitted && (
                 <p style={{ color: "var(--good)" }}>Answer locked in - waiting for everyone else...</p>
               )}
@@ -616,6 +661,11 @@ export default function PlayPage() {
                   )}
                 </div>
               )}
+                  {knowHost.type === "guess-list" && (
+                    <p style={{ fontSize: 18, fontWeight: 700, color: "var(--good)" }}>
+                      {(knowHost.answerOrder || []).join(" → ")}
+                    </p>
+                  )}
             </>
           ) : (
             <p style={{ color: "var(--muted)" }}>Waiting for the host to ask a question...</p>
