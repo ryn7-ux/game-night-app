@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const WELCOME_TEXT = "Welcome to Game Night";
-const EVENT_DATE = "15th August 2026";
+const EVENT_DATE = "23rd August 2026";
 
 export default function WelcomePage() {
           const router = useRouter();
