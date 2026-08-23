@@ -763,6 +763,73 @@ function HostControls() {
     setCorrectAnswer("");
   }
 
+  const [rollResult, setRollResult] = useState(null);
+  const [wheelChecked, setWheelChecked] = useState({});
+  const [wheelResult, setWheelResult] = useState(null);
+  const [wheelVictim, setWheelVictim] = useState("");
+
+  const TRIVIA_BANK = {
+    1: [
+      { q: "On what date did the infamous 9/11 terrorist attacks take place?", type: "mcq", options: ["September 11, 2001", "September 9, 2001", "November 9, 2001", "September 11, 2000"], answer: "September 11, 2001" },
+      { q: "Which 20th-century dictator is infamous for overseeing a system of concentration camps during World War II?", type: "mcq", options: ["Joseph Stalin", "Adolf Hitler", "Benito Mussolini", "Hideki Tojo"], answer: "Adolf Hitler" },
+      { q: "TikTok creator Noxa (@noxaasht) rose to viral fame for creating which AI \"brainrot\" character?", type: "mcq", options: ["Tung Tung Tung Sahur", "Tralalero Tralala", "Ballerina Cappuccina", "Bombardiro Crocodilo"], answer: "Tung Tung Tung Sahur" },
+      { q: "Quick detour: regardless of who you think won the last World Cup final, what is the capital of Brazil?", type: "mcq", options: ["Rio de Janeiro", "Sao Paulo", "Brasilia", "Salvador"], answer: "Brasilia" },
+      { q: "How many states of matter are commonly taught to exist?", type: "mcq", options: ["3", "4", "5", "6"], answer: "4" },
+      { q: "Band-Aid is actually a brand name, not the product itself. What is the actual generic name for the product?", type: "mcq", options: ["Adhesive bandage", "Medical tape", "Gauze pad", "Wound dressing"], answer: "Adhesive bandage" },
+      { q: "Who is the founder of Lamborghini?", type: "mcq", options: ["Ferruccio Lamborghini", "Enzo Lamborghini", "Enzo Ferrari", "Ravi Sharma"], answer: "Ferruccio Lamborghini" },
+    ],
+    2: [
+      { q: "There are more possible chess games than there are atoms in the observable universe.", type: "truefalse", answer: "True" },
+      { q: "There is a species of jellyfish that is biologically immortal and can revert back to a juvenile stage indefinitely.", type: "truefalse", answer: "True" },
+      { q: "Some cats can be allergic to humans, reacting to human dander the same way we react to pet dander.", type: "truefalse", answer: "True" },
+      { q: "A single strand of spaghetti is technically called a spaghetto in Italian.", type: "truefalse", answer: "True" },
+      { q: "NASA once employed an official Chief Happiness Astronaut whose only job was to make the crew laugh before liftoff.", type: "truefalse", answer: "False" },
+      { q: "Australia briefly replaced its national anthem with recorded kangaroo sounds for one year in the 1970s.", type: "truefalse", answer: "False" },
+      { q: "A Swiss law requires every citizen to own a cowbell by the time they turn 18.", type: "truefalse", answer: "False" },
+    ],
+    3: [
+      { q: "According to a Guttmacher Institute study conducted in Odisha, India, roughly how many condoms does the average married man there use per year?", type: "numeric", answer: "1.3" },
+      { q: "What is the average weight, in kg, of an adult Indian male?", type: "numeric", answer: "65" },
+      { q: "Sudan topped a major global survey for average penis size. What is their average, in cm?", type: "numeric", answer: "17.95" },
+      { q: "Iceland drinks more Coca-Cola per capita than any other country on Earth. Roughly how many 220ml bottles per week does the average Icelander drink?", type: "numeric", answer: "8" },
+      { q: "What is the global average daily phone screen time, in hours and minutes?", type: "numeric", answer: "6h54m" },
+      { q: "What is the legal age of consent in Japan?", type: "numeric", answer: "16" },
+      { q: "How old is NBA legend Magic Johnson?", type: "numeric", answer: "67" },
+    ],
+  };
+
+  async function loadBankQuestion(item) {
+    await setRound1Question({ questionText: item.q, questionType: item.type, correctAnswer: item.answer, options: item.options || null });
+  }
+
+  function rollDice(max, negative) {
+    const n = Math.floor(Math.random() * (max + 1));
+    setRollResult(negative ? -n : n);
+  }
+
+  function toggleWheelPlayer(id) {
+    setWheelChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  function spinWheel() {
+    const entries = [];
+    Object.keys(wheelChecked).forEach((id) => {
+      if (wheelChecked[id]) { [25, 50, 100].forEach((v) => entries.push({ id, v })); }
+    });
+    if (entries.length === 0) return;
+    const pick = entries[Math.floor(Math.random() * entries.length)];
+    setWheelResult(pick);
+    setWheelVictim("");
+  }
+
+  async function stealPoints() {
+    if (!wheelResult || !wheelVictim) return;
+    await awardRound1Points(wheelResult.id, wheelResult.v);
+    await awardRound1Points(wheelVictim, -wheelResult.v);
+    setWheelResult(null);
+    setWheelChecked({});
+  }
+
   async function handleRemovePlayer(playerId) {
     await removePlayer(playerId);
     setConfirmRemoveId(null);
@@ -1933,6 +2000,60 @@ function HostControls() {
       <div className="card">
         <p className="card-label">Leaderboard (whole night)</p>
         <Leaderboard />
+      </div>
+
+      <div className="card">
+        <p className="card-label">Trivia Tools</p>
+        <p style={{ fontWeight: 700, marginTop: 0 }}>Question Bank</p>
+        {[1, 2, 3].map((r) => (
+          <div key={r} style={{ marginBottom: 10 }}>
+            <p style={{ color: "var(--muted)", fontSize: 13, margin: "4px 0" }}>Round {r}</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {TRIVIA_BANK[r].map((item, i) => (
+                <button key={i} className="btn-secondary" style={{ fontSize: 12 }} onClick={() => loadBankQuestion(item)}>
+                  Q{i + 1}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <p style={{ fontWeight: 700 }}>Random Points (Round 3)</p>
+        <div className="form-row" style={{ justifyContent: "flex-start", marginBottom: 8, alignItems: "center" }}>
+          <button className="btn-good" onClick={() => rollDice(250, false)}>Roll 0-250 (correct)</button>
+          <button className="btn-bad" onClick={() => rollDice(100, true)}>Roll 0-100 (wrong)</button>
+          {rollResult !== null && (<span style={{ fontWeight: 800, fontSize: 18 }}>{rollResult}</span>)}
+        </div>
+
+        <p style={{ fontWeight: 700 }}>Wheel (Round 2 Steal)</p>
+        <p style={{ color: "var(--muted)", fontSize: 12 }}>Check who got this question right, then spin.</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+          {players.map((p) => (
+            <button
+              key={p.id}
+              className={wheelChecked[p.id] ? "btn-primary" : "btn-secondary"}
+              style={{ fontSize: 12 }}
+              onClick={() => toggleWheelPlayer(p.id)}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+        <button className="btn-primary" onClick={spinWheel}>Spin Wheel</button>
+        {wheelResult && (
+          <div style={{ marginTop: 10 }}>
+            <p>
+              {(players.find((p) => p.id === wheelResult.id) || {}).name} lands on {wheelResult.v} pts - steal from:
+            </p>
+            <select value={wheelVictim} onChange={(e) => setWheelVictim(e.target.value)}>
+              <option value="">Choose player</option>
+              {players.filter((p) => p.id !== wheelResult.id).map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <button className="btn-bad" style={{ marginLeft: 8 }} onClick={stealPoints}>Steal!</button>
+          </div>
+        )}
       </div>
 
       <div className="card">
