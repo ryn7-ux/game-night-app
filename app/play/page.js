@@ -554,7 +554,7 @@ export default function PlayPage() {
                   <p style={{ color: "var(--muted)", fontSize: 13 }}>
                     Tap a movie to cycle it through the tiers: {(knowHost.tiers || []).map((t) => t.label).join(" → ")}.
                   </p>
-                  <div style={{ display: "flex", flexWrap": "wrap", gap: 8, marginTop: 8 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
                     {(knowHost.items || []).map((item) => {
                       const tid = knowHostTierAssign[item];
                       const label = tid ? knowHost.tiers?.find((t) => t.id === tid)?.label : null;
@@ -753,7 +753,7 @@ export default function PlayPage() {
               <p style={{ color: "var(--muted)", fontSize: 13 }}>
                 {(teamGame.teamNames?.[teamGame.round.currentTurn] || `Team ${teamGame.round.currentTurn}`)}'s turn - call one out, the host will click it.
               </p>
-              <div style={{ display: "flex", flexWrap": "wrap", gap: 8, marginTop: 8 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
                 {teamGame.round.options.map((opt, i) => {
                   const claimedBy = teamGame.round.results && teamGame.round.results[i];
                   let style = { padding: "6px 10px", borderRadius: 8, fontSize: 13, border: "1px solid var(--border)" };
