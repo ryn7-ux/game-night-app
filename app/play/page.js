@@ -17,6 +17,7 @@ import {
   listenPartnerGame,
   submitPartnerAnswer,
   listenTeamGame,
+  setCaptainOrder,
   listenGuessPhoto,
   submitGuessPhotoAnswer,
   listenWhoSent,
@@ -56,6 +57,8 @@ export default function PlayPage() {
   const [partnerSubmitted, setPartnerSubmitted] = useState(false);
 
   const [teamGame, setTeamGame] = useState(null);
+  const [captainOrderDraft, setCaptainOrderDraft] = useState(null);
+  const [captainOrderSubmitted, setCaptainOrderSubmitted] = useState(false);
 
   const [guessPhoto, setGuessPhoto] = useState(null);
   const [guessPhotoAnswer, setGuessPhotoAnswer] = useState("");
@@ -144,6 +147,11 @@ export default function PlayPage() {
     setWhoSentSubmitted(false);
     setWhoSentGuess("");
   }, [whoSent?.imageUrl]);
+
+  useEffect(() => {
+    setCaptainOrderSubmitted(false);
+    setCaptainOrderDraft(null);
+  }, [teamGame?.orderingOpen]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -262,6 +270,29 @@ export default function PlayPage() {
   }
 
   const myTeam = teamGame?.assignments?.[playerId];
+  const isCaptain = myTeam && teamGame?.captains?.[myTeam] === playerId;
+  const myTeamRoster = teamGame
+    ? Object.entries(teamGame.assignments || {})
+        .filter(([, t]) => t === myTeam)
+        .map(([id]) => id)
+    : [];
+
+  function moveCaptainDraft(index, dir) {
+    setCaptainOrderDraft((prev) => {
+      const arr = [...(prev || myTeamRoster)];
+      const j = index + dir;
+      if (j < 0 || j >= arr.length) return arr;
+      [arr[index], arr[j]] = [arr[j], arr[index]];
+      return arr;
+    });
+  }
+
+  async function handleCaptainOrderSubmit() {
+    if (!myTeam) return;
+    const order = captainOrderDraft || myTeamRoster;
+    await setCaptainOrder(myTeam, order);
+    setCaptainOrderSubmitted(true);
+  }
 
   if (removed) {
     return (
@@ -330,7 +361,7 @@ export default function PlayPage() {
         let title = "";
         let entries = [];
         if (currentGame === "guess-the-real-place") {
-          title = "🗺️ Team Scores";
+          title = "🔍 Team Scores";
           entries = [
             { name: teamGame?.teamNames?.A || "Team A", score: teamGame?.scores?.A || 0 },
             { name: teamGame?.teamNames?.B || "Team B", score: teamGame?.scores?.B || 0 },
@@ -523,7 +554,7 @@ export default function PlayPage() {
                   <p style={{ color: "var(--muted)", fontSize: 13 }}>
                     Tap a movie to cycle it through the tiers: {(knowHost.tiers || []).map((t) => t.label).join(" → ")}.
                   </p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                  <div style={{ display: "flex", flexWrap": "wrap", gap: 8, marginTop: 8 }}>
                     {(knowHost.items || []).map((item) => {
                       const tid = knowHostTierAssign[item];
                       const label = tid ? knowHost.tiers?.find((t) => t.id === tid)?.label : null;
@@ -549,7 +580,7 @@ export default function PlayPage() {
                       Object.keys(knowHostTierAssign).length !== (knowHost.items?.length || 0)
                     }
                     onClick={handleKnowHostTierSubmit}
-                  >
+                >
                     Submit Tiers
                   </button>
 
@@ -611,7 +642,7 @@ export default function PlayPage() {
                       type="text"
                       value={g}
                       onChange={(e) => updateKnowHostGuess(i, e.target.value)}
-                      placeholder={"Guess #" + (i + 1)}
+                      placeholder={`Guess #${i + 1}`}
                       disabled={spectator}
                       style={{ width: "100%", marginTop: 8 }}
                     />
@@ -659,13 +690,13 @@ export default function PlayPage() {
                       ))}
                     </div>
                   )}
-                </div>
-              )}
                   {knowHost.type === "guess-list" && (
                     <p style={{ fontSize: 18, fontWeight: 700, color: "var(--good)" }}>
                       {(knowHost.answerOrder || []).join(" → ")}
                     </p>
                   )}
+                </div>
+              )}
             </>
           ) : (
             <p style={{ color: "var(--muted)" }}>Waiting for the host to ask a question...</p>
@@ -711,14 +742,64 @@ export default function PlayPage() {
 
       {currentGame === "guess-the-real-place" && (
         <div className="card" style={{ maxWidth: 500, width: "100%" }}>
-          <h2 style={{ marginTop: 0 }}>🗺️ Guess the Real Place</h2>
+          <h2 style={{ marginTop: 0 }}>🔍 Real or Fake?</h2>
           <p style={{ color: "var(--muted)" }}>
-            You're on {myTeam ? `Team ${myTeam}` : "no team yet"}.
+            You're on {myTeam ? `Team ${myTeam}` : "no team yet"}{isCaptain ? " - you're the captain ⭐" : ""}.
           </p>
-          {teamGame?.prompt && teamGame?.revealed ? (
-            <p style={{ fontSize: 18, fontWeight: 600 }}>{teamGame.prompt}</p>
+
+          {teamGame?.round ? (
+            <>
+              <p style={{ fontWeight: 700, marginBottom: 4 }}>{teamGame.round.category}</p>
+              <p style={{ color: "var(--muted)", fontSize: 13 }}>
+                {(teamGame.teamNames?.[teamGame.round.currentTurn] || `Team ${teamGame.round.currentTurn}`)}'s turn - call one out, the host will click it.
+              </p>
+              <div style={{ display: "flex", flexWrap": "wrap", gap: 8, marginTop: 8 }}>
+                {teamGame.round.options.map((opt, i) => {
+                  const claimedBy = teamGame.round.results && teamGame.round.results[i];
+                  let style = { padding: "6px 10px", borderRadius: 8, fontSize: 13, border: "1px solid var(--border)" };
+                  if (claimedBy) {
+                    style = opt.isReal
+                      ? { ...style, background: "var(--good)", color: "#04240f" }
+                      : { ...style, background: "var(--bad)", color: "#2a0505" };
+                  }
+                  return (
+                    <div key={i} style={style}>
+                      {opt.text}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           ) : (
-            <p style={{ color: "var(--muted)" }}>Waiting for the host to reveal the next clue...</p>
+            <p style={{ color: "var(--muted)" }}>Waiting for the host to push the next round...</p>
+          )}
+
+          {teamGame?.orderingOpen && (
+            <div style={{ marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+              {!isCaptain ? (
+                <p style={{ color: "var(--muted)" }}>Waiting for your captain to decide your team's point order...</p>
+              ) : captainOrderSubmitted ? (
+                <p style={{ color: "var(--good)" }}>Order submitted - waiting for the host to finalize.</p>
+              ) : (
+                <>
+                  <p style={{ fontWeight: 700 }}>Rank your team for bonus points</p>
+                  <p style={{ color: "var(--muted)", fontSize: 13 }}>Top of the list gets the most points. Use the arrows to reorder.</p>
+                  {(captainOrderDraft || myTeamRoster).map((id, i) => {
+                    const p = players.find((pl) => pl.id === id);
+                    return (
+                      <div key={id} className="answer-row">
+                        <div style={{ flex: 1, fontWeight: 600 }}>{i + 1}. {p ? p.name : "?"}</div>
+                        <button className="btn-secondary" onClick={() => moveCaptainDraft(i, -1)} disabled={i === 0}>↑</button>
+                        <button className="btn-secondary" onClick={() => moveCaptainDraft(i, 1)} disabled={i === (captainOrderDraft || myTeamRoster).length - 1}>↓</button>
+                      </div>
+                    );
+                  })}
+                  <button className="btn-good" style={{ marginTop: 12 }} onClick={handleCaptainOrderSubmit}>
+                    Submit Order
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -741,7 +822,7 @@ export default function PlayPage() {
                     autoFocus
                     disabled={spectator}
                     style={{ flex: 1 }}
-                  />
+                />
                   <button className="btn-primary" type="submit" disabled={spectator}>Submit</button>
                 </form>
               )}
