@@ -295,92 +295,92 @@ function normalizeGuess(s) {
 // Each category: 10 real items + 10 made-up items for the "Real or Fake?" team battle.
 const REAL_OR_FAKE_BANK = {
   "Places": [
-    { text: "Truth or Consequences, New Mexico", isReal: true },
-    { text: "Hell, Michigan", isReal: true },
-    { text: "Boring, Oregon", isReal: true },
-    { text: "Intercourse, Pennsylvania", isReal: true },
-    { text: "Weiner, Arkansas", isReal: true },
-    { text: "Rough and Ready, California", isReal: true },
-    { text: "Toad Suck, Arkansas", isReal: true },
-    { text: "Chicken, Alaska", isReal: true },
-    { text: "Climax, Michigan", isReal: true },
-    { text: "Accident, Maryland", isReal: true },
-    { text: "Mudbucket, Idaho", isReal: false },
-    { text: "Snoreville, Vermont", isReal: false },
-    { text: "Lower Wigglesworth, England", isReal: false },
-    { text: "Duckpond Hollow, Kentucky", isReal: false },
-    { text: "New Boredom, Ohio", isReal: false },
-    { text: "Wobblestone, Wales", isReal: false },
-    { text: "Half Mustache, Montana", isReal: false },
-    { text: "Sockington, Maine", isReal: false },
-    { text: "Grumbleshire, England", isReal: false },
-    { text: "Left Sandwich, Nevada", isReal: false },
+    { text: "Bastard", isReal: true, desc: "Norway" },
+    { text: "Tickle Cock Bridge", isReal: true, desc: "England (West Yorkshire)" },
+    { text: "Booby Dingle", isReal: true, desc: "England (Herefordshire)" },
+    { text: "Big Bone Lick State Park", isReal: true, desc: "USA (Kentucky)" },
+    { text: "Climax", isReal: true, desc: "USA (Colorado)" },
+    { text: "Cunt", isReal: true, desc: "Spain (Galicia, A Coruña)" },
+    { text: "Mairé", isReal: true, desc: "France (Vienne)" },
+    { text: "Gaylordsville", isReal: true, desc: "USA (Connecticut)" },
+    { text: "Sexmoan", isReal: true, desc: "Philippines (former name of Sasmuan, Pampanga)" },
+    { text: "Tittybong", isReal: true, desc: "Australia (Victoria)" },
+    { text: "Erection Falls", isReal: false, desc: "Canada, Ontario (invented)" },
+    { text: "Girthington", isReal: false, desc: "Wales, Powys (invented)" },
+    { text: "Chubby Creek", isReal: false, desc: "USA, Texas (invented)" },
+    { text: "Tinklebury", isReal: false, desc: "England, Kent (invented)" },
+    { text: "Dickem Downs", isReal: false, desc: "England, Surrey (invented)" },
+    { text: "Sloppy Town", isReal: false, desc: "USA, Oregon (invented)" },
+    { text: "Tao Lee Street", isReal: false, desc: "China, Guangdong (invented)" },
+    { text: "Krakenest", isReal: false, desc: "Norway, Troms (invented)" },
+    { text: "Whoresville", isReal: false, desc: "USA, Nevada (invented)" },
+    { text: "Ball Sack", isReal: false, desc: "Australia, Queensland (invented)" },
   ],
   "Food": [
-    { text: "Century egg", isReal: true },
-    { text: "Casu marzu (maggot cheese)", isReal: true },
-    { text: "Surstromming (fermented herring)", isReal: true },
-    { text: "Haggis", isReal: true },
-    { text: "Balut", isReal: true },
-    { text: "Vegemite", isReal: true },
-    { text: "Natto", isReal: true },
-    { text: "Hakarl (fermented shark)", isReal: true },
-    { text: "Rocky Mountain oysters", isReal: true },
-    { text: "Escamoles (ant larvae)", isReal: true },
-    { text: "Blorpfruit", isReal: false },
-    { text: "Smoked cloud jelly", isReal: false },
-    { text: "Wobblecheese", isReal: false },
-    { text: "Pickled moonbeans", isReal: false },
-    { text: "Crunchy fog crisps", isReal: false },
-    { text: "Butterscotch eel jerky", isReal: false },
-    { text: "Static bread", isReal: false },
-    { text: "Velvet ash pudding", isReal: false },
-    { text: "Whistling kelp chips", isReal: false },
-    { text: "Sunken honey bark", isReal: false },
+    { text: "Century egg", isReal: true, desc: "China" },
+    { text: "Casu marzu", isReal: true, desc: "Italy" },
+    { text: "Surströmming", isReal: true, desc: "Sweden" },
+    { text: "Haggis", isReal: true, desc: "Scotland" },
+    { text: "Balut", isReal: true, desc: "Philippines" },
+    { text: "Hákarl", isReal: true, desc: "Iceland" },
+    { text: "Rocky Mountain oysters", isReal: true, desc: "USA" },
+    { text: "Shiokara", isReal: true, desc: "Japan" },
+    { text: "Sannakji", isReal: true, desc: "Korea" },
+    { text: "Kiviak", isReal: true, desc: "Greenland" },
+    { text: "Blorpfruit", isReal: false, desc: "invented" },
+    { text: "Smoked cloud jelly", isReal: false, desc: "invented" },
+    { text: "Wobblecheese", isReal: false, desc: "invented" },
+    { text: "Pickled moonbeans", isReal: false, desc: "invented" },
+    { text: "Butterscotch eel jerky", isReal: false, desc: "invented" },
+    { text: "Static bread", isReal: false, desc: "invented" },
+    { text: "Whistling kelp chips", isReal: false, desc: "invented" },
+    { text: "Fermented starlight", isReal: false, desc: "invented" },
+    { text: "Tumbleweed stew", isReal: false, desc: "invented" },
+    { text: "Bristled pepper snails", isReal: false, desc: "invented" },
   ],
   "Sex Positions": [
-    { text: "Missionary", isReal: true },
-    { text: "Doggy style", isReal: true },
-    { text: "Cowgirl", isReal: true },
-    { text: "Reverse cowgirl", isReal: true },
-    { text: "Spooning", isReal: true },
-    { text: "69", isReal: true },
-    { text: "Wheelbarrow", isReal: true },
-    { text: "Lotus", isReal: true },
-    { text: "Standing", isReal: true },
-    { text: "Butterfly", isReal: true },
-    { text: "The Confused Pretzel", isReal: false },
-    { text: "Downward Flamingo", isReal: false },
-    { text: "The Sleepy Kangaroo", isReal: false },
-    { text: "Reverse Umbrella", isReal: false },
-    { text: "The Nervous Giraffe", isReal: false },
-    { text: "Sideways Taco", isReal: false },
-    { text: "The Polite Handshake", isReal: false },
-    { text: "Upside-Down Bicycle", isReal: false },
-    { text: "The Wandering Compass", isReal: false },
-    { text: "Backwards Cartwheel", isReal: false },
+    { text: "Alabama Hot Pocket", isReal: true, desc: "" },
+    { text: "Rusty Trombone", isReal: true, desc: "" },
+    { text: "Snow Angel", isReal: true, desc: "" },
+    { text: "Boa Constrictor", isReal: true, desc: "" },
+    { text: "The Staircase", isReal: true, desc: "" },
+    { text: "Cold Lunch", isReal: true, desc: "" },
+    { text: "Brown Eye", isReal: true, desc: "" },
+    { text: "Screaming Seagull", isReal: true, desc: "" },
+    { text: "Rear Admiral", isReal: true, desc: "" },
+    { text: "Angry Pirate", isReal: true, desc: "" },
+    { text: "Milkman's", isReal: false, desc: "" },
+    { text: "Tibetan Seesaw", isReal: false, desc: "" },
+    { text: "Captain's Cornhole", isReal: false, desc: "" },
+    { text: "Slippery Simon", isReal: false, desc: "" },
+    { text: "Chocolate Sunrise", isReal: false, desc: "" },
+    { text: "The Portuguese Handshake", isReal: false, desc: "" },
+    { text: "Sergeant Pepper's Surprise", isReal: false, desc: "" },
+    { text: "The Norwegian Windmill", isReal: false, desc: "" },
+    { text: "The Bavarian Waffle", isReal: false, desc: "" },
+    { text: "The Kentucky Sidewinder", isReal: false, desc: "" },
   ],
   "Chinese Celebrities": [
-    { text: "Jackie Chan", isReal: true },
-    { text: "Jet Li", isReal: true },
-    { text: "Zhang Ziyi", isReal: true },
-    { text: "Gong Li", isReal: true },
-    { text: "Chow Yun-fat", isReal: true },
-    { text: "Yao Ming", isReal: true },
-    { text: "Fan Bingbing", isReal: true },
-    { text: "Donnie Yen", isReal: true },
-    { text: "Liu Yifei", isReal: true },
-    { text: "Tony Leung", isReal: true },
-    { text: "Wang Chu Lin", isReal: false },
-    { text: "Li Feng Hua", isReal: false },
-    { text: "Chen Bo Yun", isReal: false },
-    { text: "Zhou Da Ming", isReal: false },
-    { text: "Huang Wei Jie", isReal: false },
-    { text: "Ma Xiu Ying", isReal: false },
-    { text: "Sun Le Fan", isReal: false },
-    { text: "Deng Hao Ran", isReal: false },
-    { text: "Lin Jia Qi", isReal: false },
-    { text: "Xu Tian Yu", isReal: false },
+    { text: "Zhang Ziyi", isReal: true, desc: "actress" },
+    { text: "Gong Li", isReal: true, desc: "actress" },
+    { text: "Chow Yun-fat", isReal: true, desc: "actor" },
+    { text: "Donnie Yen", isReal: true, desc: "actor, martial artist" },
+    { text: "Tony Leung", isReal: true, desc: "actor" },
+    { text: "Edison Chen", isReal: true, desc: "actor, singer, businessman" },
+    { text: "Aaron Kwok", isReal: true, desc: "singer, actor" },
+    { text: "Chris Lee", isReal: true, desc: "singer, actress (real name Li Yuchun)" },
+    { text: "Nicholas Tse", isReal: true, desc: "actor, singer, TV chef" },
+    { text: "Kelly Chen", isReal: true, desc: "singer, actress" },
+    { text: "Wang Chu Lin", isReal: false, desc: "invented - actor" },
+    { text: "Chen Bo Yun", isReal: false, desc: "invented - singer" },
+    { text: "Deng Hao Ran", isReal: false, desc: "invented - film director" },
+    { text: "Zhao Jun Wei", isReal: false, desc: "invented - actress" },
+    { text: "Derek Wong", isReal: false, desc: "invented - TV host" },
+    { text: "Brandon Liu", isReal: false, desc: "invented - singer" },
+    { text: "Kyle Zhou", isReal: false, desc: "invented - actor" },
+    { text: "Tyler Huang", isReal: false, desc: "invented - model" },
+    { text: "Marcus Xu", isReal: false, desc: "invented - politician" },
+    { text: "Trevor Lin", isReal: false, desc: "invented - businessman" },
   ],
 };
 
@@ -393,7 +393,11 @@ function shuffleArray(arr) {
   return a;
 }
 
-
+function descFor(category, text) {
+  const bank = REAL_OR_FAKE_BANK[category] || [];
+  const match = bank.find((b) => b.text === text);
+  return (match && match.desc) || "";
+}
 function computeKnowHostScore(q, answer) {
   if (!q || answer === undefined || answer === null || answer === "") return null;
   if (q.type === "rank") {
@@ -851,10 +855,11 @@ function HostControls() {
     async function pushRealOrFakeCategory() {
     const bank = REAL_OR_FAKE_BANK[realOrFakeCategory];
     if (!bank) return;
-    await pushRealOrFakeRound(realOrFakeCategory, shuffleArray(bank));
+    const shuffled = shuffleArray(bank).map(function (b) { return { text: b.text, isReal: b.isReal }; });
+    await pushRealOrFakeRound(realOrFakeCategory, shuffled);
   }
 
-async function startPhotoRound() {
+  async function startPhotoRound() {
     if (!guessPhotoAvatarId) return;
     const avatar = AVATARS.find((a) => a.id === guessPhotoAvatarId);
     await startGuessPhoto(guessPhotoAvatarId, avatar ? avatar.name : "");
@@ -1628,16 +1633,20 @@ async function startPhotoRound() {
                 const claimedBy = round.results && round.results[i];
                 let cls = "btn-secondary";
                 if (claimedBy) cls = opt.isReal ? "btn-good" : "btn-bad";
+                const desc = descFor(round.category, opt.text);
                 return (
-                  <button
-                    key={i}
-                    className={cls}
-                    disabled={!!claimedBy}
-                    onClick={() => claimRealOrFakeItem(i, round.currentTurn)}
-                    style={{ fontSize: 13 }}
-                  >
-                    {opt.text}{claimedBy ? ` (${teamNames[claimedBy] || claimedBy})` : ""}
-                  </button>
+                  <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                    <button
+                      className={cls}
+                      disabled={!!claimedBy}
+                      onClick={() => claimRealOrFakeItem(i, round.currentTurn)}
+                      style={{ fontSize: 13 }}
+                    >
+                      {opt.text}
+                      {claimedBy ? " (" + (teamNames[claimedBy] || claimedBy) + ")" : ""}
+                    </button>
+                    {desc ? <span style={{ fontSize: 10, color: "var(--muted)" }}>{desc}</span> : null}
+                  </div>
                 );
               })}
             </div>
