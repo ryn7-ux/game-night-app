@@ -653,7 +653,9 @@ function HostControls() {
   const [leaderboardVisible, setLeaderboardVisibleState] = useState(false);
   const [roundScoresVisible, setRoundScoresVisibleState] = useState(false);
 
-  const playerViewWidget = (
+  const [showQuickAward, setShowQuickAward] = useState(false);
+    const [quickAwardInputs, setQuickAwardInputs] = useState({});
+    const playerViewWidget = (
     <div
       style={{
         position: "fixed",
@@ -723,6 +725,56 @@ function HostControls() {
         >
           👀 Player View
         </button>
+      )}
+      <button
+        className="btn-primary"
+        onClick={() => setShowQuickAward((v) => !v)}
+        style={{ boxShadow: "0 4px 14px rgba(0,0,0,0.4)" }}
+      >
+        Award Points
+      </button>
+      {showQuickAward && (
+        <div
+          style={{
+            width: 260,
+            maxHeight: 320,
+            overflowY: "auto",
+            background: "#0c1230",
+            border: "1px solid #333",
+            borderRadius: 12,
+            padding: 12,
+            boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
+          }}
+        >
+          <p style={{ fontWeight: 700, marginTop: 0, marginBottom: 8 }}>Award Leaderboard Points</p>
+          {players.length === 0 && (
+            <p style={{ color: "var(--muted)", fontSize: 13 }}>No players joined yet.</p>
+          )}
+          {players.map((p) => (
+            <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0" }}>
+              <div style={{ flex: 1, fontSize: 13 }}>{p.name}</div>
+              <input
+                type="number"
+                placeholder="+/-"
+                style={{ width: 55 }}
+                value={quickAwardInputs[p.id] || ""}
+                onChange={(e) => setQuickAwardInputs({ ...quickAwardInputs, [p.id]: e.target.value })}
+              />
+              <button
+                className="btn-good"
+                style={{ fontSize: 12, padding: "4px 8px" }}
+                onClick={() => {
+                  const amt = parseInt(quickAwardInputs[p.id] || "0", 10);
+                  if (!amt) return;
+                  addLeaderboardPoints(p.id, amt);
+                  setQuickAwardInputs({ ...quickAwardInputs, [p.id]: "" });
+                }}
+              >
+                Give
+              </button>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
