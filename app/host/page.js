@@ -47,7 +47,17 @@ import {
   revealTeamPrompt,
   awardTeamPoints,
   resetTeamScores,
+  awardTeamPoints,
+  resetTeamScores,
+  setTeamCaptain,
+  pushRealOrFakeRound,
+  claimRealOrFakeItem,
+  setCurrentTurn,
+  clearRealOrFakeRound,
+  openCaptainOrdering,
+  resetRealOrFakeGame,
   listenGuessPhoto,
+  listenGuessPhoto,  listenGuessPhoto,
   startGuessPhoto,
   setGuessPhotoBlur,
   revealGuessPhoto,
@@ -100,9 +110,9 @@ const GAMES = [
   },
   {
     id: "guess-the-real-place",
-    name: "Guess the Real Place",
-    icon: "🗺️",
-    tagline: "Team battle - trust your gut",
+        name: "Real or Fake?",
+    icon: "🔍",
+    tagline: "Team battle - spot the real 10 of 20",
     status: "live",
     swatch: "linear-gradient(135deg, #34d399, #0d2f78)",
   },
@@ -284,6 +294,108 @@ const KNOW_HOST_QUESTIONS = [
 function normalizeGuess(s) {
   return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
+
+// Each category: 10 real items + 10 made-up items for the "Real or Fake?" team battle.
+const REAL_OR_FAKE_BANK = {
+  "Places": [
+    { text: "Truth or Consequences, New Mexico", isReal: true },
+    { text: "Hell, Michigan", isReal: true },
+    { text: "Boring, Oregon", isReal: true },
+    { text: "Intercourse, Pennsylvania", isReal: true },
+    { text: "Weiner, Arkansas", isReal: true },
+    { text: "Rough and Ready, California", isReal: true },
+    { text: "Toad Suck, Arkansas", isReal: true },
+    { text: "Chicken, Alaska", isReal: true },
+    { text: "Climax, Michigan", isReal: true },
+    { text: "Accident, Maryland", isReal: true },
+    { text: "Mudbucket, Idaho", isReal: false },
+    { text: "Snoreville, Vermont", isReal: false },
+    { text: "Lower Wigglesworth, England", isReal: false },
+    { text: "Duckpond Hollow, Kentucky", isReal: false },
+    { text: "New Boredom, Ohio", isReal: false },
+    { text: "Wobblestone, Wales", isReal: false },
+    { text: "Half Mustache, Montana", isReal: false },
+    { text: "Sockington, Maine", isReal: false },
+    { text: "Grumbleshire, England", isReal: false },
+    { text: "Left Sandwich, Nevada", isReal: false },
+  ],
+  "Food": [
+    { text: "Century egg", isReal: true },
+    { text: "Casu marzu (maggot cheese)", isReal: true },
+    { text: "Surstromming (fermented herring)", isReal: true },
+    { text: "Haggis", isReal: true },
+    { text: "Balut", isReal: true },
+    { text: "Vegemite", isReal: true },
+    { text: "Natto", isReal: true },
+    { text: "Hakarl (fermented shark)", isReal: true },
+    { text: "Rocky Mountain oysters", isReal: true },
+    { text: "Escamoles (ant larvae)", isReal: true },
+    { text: "Blorpfruit", isReal: false },
+    { text: "Smoked cloud jelly", isReal: false },
+    { text: "Wobblecheese", isReal: false },
+    { text: "Pickled moonbeans", isReal: false },
+    { text: "Crunchy fog crisps", isReal: false },
+    { text: "Butterscotch eel jerky", isReal: false },
+    { text: "Static bread", isReal: false },
+    { text: "Velvet ash pudding", isReal: false },
+    { text: "Whistling kelp chips", isReal: false },
+    { text: "Sunken honey bark", isReal: false },
+  ],
+  "Sex Positions": [
+    { text: "Missionary", isReal: true },
+    { text: "Doggy style", isReal: true },
+    { text: "Cowgirl", isReal: true },
+    { text: "Reverse cowgirl", isReal: true },
+    { text: "Spooning", isReal: true },
+    { text: "69", isReal: true },
+    { text: "Wheelbarrow", isReal: true },
+    { text: "Lotus", isReal: true },
+    { text: "Standing", isReal: true },
+    { text: "Butterfly", isReal: true },
+    { text: "The Confused Pretzel", isReal: false },
+    { text: "Downward Flamingo", isReal: false },
+    { text: "The Sleepy Kangaroo", isReal: false },
+    { text: "Reverse Umbrella", isReal: false },
+    { text: "The Nervous Giraffe", isReal: false },
+    { text: "Sideways Taco", isReal: false },
+    { text: "The Polite Handshake", isReal: false },
+    { text: "Upside-Down Bicycle", isReal: false },
+    { text: "The Wandering Compass", isReal: false },
+    { text: "Backwards Cartwheel", isReal: false },
+  ],
+  "Chinese Celebrities": [
+    { text: "Jackie Chan", isReal: true },
+    { text: "Jet Li", isReal: true },
+    { text: "Zhang Ziyi", isReal: true },
+    { text: "Gong Li", isReal: true },
+    { text: "Chow Yun-fat", isReal: true },
+    { text: "Yao Ming", isReal: true },
+    { text: "Fan Bingbing", isReal: true },
+    { text: "Donnie Yen", isReal: true },
+    { text: "Liu Yifei", isReal: true },
+    { text: "Tony Leung", isReal: true },
+    { text: "Wang Chu Lin", isReal: false },
+    { text: "Li Feng Hua", isReal: false },
+    { text: "Chen Bo Yun", isReal: false },
+    { text: "Zhou Da Ming", isReal: false },
+    { text: "Huang Wei Jie", isReal: false },
+    { text: "Ma Xiu Ying", isReal: false },
+    { text: "Sun Le Fan", isReal: false },
+    { text: "Deng Hao Ran", isReal: false },
+    { text: "Lin Jia Qi", isReal: false },
+    { text: "Xu Tian Yu", isReal: false },
+  ],
+};
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 
 function computeKnowHostScore(q, answer) {
   if (!q || answer === undefined || answer === null || answer === "") return null;
@@ -526,6 +638,8 @@ function HostControls() {
   const [teamPromptInput, setTeamPromptInput] = useState("");
   const [teamNameAInput, setTeamNameAInput] = useState("");
   const [teamNameBInput, setTeamNameBInput] = useState("");
+    const [realOrFakeCategory, setRealOrFakeCategory] = useState("Places");
+
 
   const [guessPhoto, setGuessPhoto] = useState(null);
   const [guessPhotoAvatarId, setGuessPhotoAvatarId] = useState("");
@@ -737,7 +851,13 @@ function HostControls() {
     setTeamPromptInput("");
   }
 
-  async function startPhotoRound() {
+    async function pushRealOrFakeCategory() {
+    const bank = REAL_OR_FAKE_BANK[realOrFakeCategory];
+    if (!bank) return;
+    await pushRealOrFakeRound(realOrFakeCategory, shuffleArray(bank));
+  }
+
+async function startPhotoRound() {
     if (!guessPhotoAvatarId) return;
     const avatar = AVATARS.find((a) => a.id === guessPhotoAvatarId);
     await startGuessPhoto(guessPhotoAvatarId, avatar ? avatar.name : "");
@@ -1424,17 +1544,25 @@ function HostControls() {
   }
 
   if (game.id === "guess-the-real-place") {
+
     const assignments = teamGame?.assignments || {};
     const teamScores = teamGame?.scores || {};
     const teamNames = teamGame?.teamNames || {};
+    const captains = teamGame?.captains || {};
+    const round = teamGame?.round || null;
+    const captainOrder = teamGame?.captainOrder || {};
+    const winningTeam = (teamScores.A || 0) >= (teamScores.B || 0) ? "A" : "B";
+    const losingTeam = winningTeam === "A" ? "B" : "A";
+    const bothOrdersIn = !!(captainOrder.A && captainOrder.A.length && captainOrder.B && captainOrder.B.length);
+    const nameFor = (id) => (players.find((p) => p.id === id)?.name) || "?";
     return (
       <div className="page-wrap">
         {playerViewWidget}
         <button className="btn-secondary" onClick={() => backToGames()} style={{ marginBottom: 16 }}>
           ← Back to Games
         </button>
-        <h1 className="page-title">🗺️ Guess the Real Place</h1>
-        <p className="page-subtitle">Team battle - default scoring, refine later</p>
+        <h1 className="page-title">🔍 Real or Fake?</h1>
+        <p className="page-subtitle">Team battle - spot the real 10 of 20</p>
 
         <div className="card">
           <p className="card-label">Leaderboard (whole night)</p>
@@ -1452,7 +1580,7 @@ function HostControls() {
         </div>
 
         <div className="card">
-          <p className="card-label">Assign Teams</p>
+          <p className="card-label">Assign Teams &amp; Captains</p>
           {players.length === 0 && <p style={{ color: "var(--muted)" }}>No players joined yet.</p>}
           {players.map((p) => (
             <div key={p.id} className="answer-row">
@@ -1464,70 +1592,121 @@ function HostControls() {
               <button className={assignments[p.id] === "B" ? "btn-good" : "btn-secondary"} onClick={() => setPlayerTeam(p.id, "B")}>
                 {teamNames.B || "Team B"}
               </button>
+              {assignments[p.id] && (
+                <button
+                  className={captains[assignments[p.id]] === p.id ? "btn-good" : "btn-secondary"}
+                  onClick={() => setTeamCaptain(assignments[p.id], p.id)}
+                >
+                  ⭐ Captain
+                </button>
+              )}
             </div>
           ))}
         </div>
 
         <div className="card">
-          <p className="card-label">Set Prompt</p>
+          <p className="card-label">Push Round</p>
           <div className="form-row" style={{ justifyContent: "flex-start" }}>
-            <input
-              type="text"
-              placeholder="Place / clue for this round"
-              value={teamPromptInput}
-              onChange={(e) => setTeamPromptInput(e.target.value)}
-              style={{ flex: 1, minWidth: 200 }}
-            />
-            <button className="btn-primary" onClick={pushTeamPrompt}>Push Prompt</button>
+            <select value={realOrFakeCategory} onChange={(e) => setRealOrFakeCategory(e.target.value)}>
+              {Object.keys(REAL_OR_FAKE_BANK).map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+            </select>
+            <button className="btn-primary" onClick={pushRealOrFakeCategory}>Push This Round</button>
           </div>
-          {teamGame?.prompt && (
-            <p style={{ marginTop: 10 }}>
-              Current prompt: <strong>{teamGame.prompt}</strong>
-            </p>
-          )}
-          {teamGame?.prompt && (
-            <button className="btn-primary" onClick={() => revealTeamPrompt()} style={{ marginTop: 10 }}>Reveal to Everyone</button>
-          )}
         </div>
+
+        {round && (
+          <div className="card">
+            <p className="card-label">Current Round ({round.category})</p>
+            <p style={{ color: "var(--muted)", fontSize: 13 }}>
+              Team decides which one to call out, then click it here - green means real (+1 point), red means fake. Turn passes automatically.
+            </p>
+            <p style={{ marginTop: 8 }}>
+              Current turn: <strong>{teamNames[round.currentTurn] || `Team ${round.currentTurn}`}</strong>{" "}
+              <button className="btn-secondary" style={{ fontSize: 12, marginLeft: 8 }} onClick={() => setCurrentTurn(round.currentTurn === "A" ? "B" : "A")}>
+                Swap Turn
+              </button>
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+              {round.options.map((opt, i) => {
+                const claimedBy = round.results && round.results[i];
+                let cls = "btn-secondary";
+                if (claimedBy) cls = opt.isReal ? "btn-good" : "btn-bad";
+                return (
+                  <button
+                    key={i}
+                    className={cls}
+                    disabled={!!claimedBy}
+                    onClick={() => claimRealOrFakeItem(i, round.currentTurn)}
+                    style={{ fontSize: 13 }}
+                  >
+                    {opt.text}{claimedBy ? ` (${teamNames[claimedBy] || claimedBy})` : ""}
+                  </button>
+                );
+              })}
+            </div>
+            <button className="btn-secondary" onClick={() => clearRealOrFakeRound()} style={{ marginTop: 12 }}>Clear Round</button>
+          </div>
+        )}
 
         <div className="card">
           <p className="card-label">Team Scores</p>
           <div className="answer-row">
             <div style={{ flex: 1, fontWeight: 600 }}>{teamNames.A || "Team A"}</div>
             <div style={{ width: 60, textAlign: "center", fontWeight: 700 }}>{teamScores.A || 0} pts</div>
-            <button className="btn-good" onClick={() => awardTeamPoints("A", 1)}>+1</button>
-            <button className="btn-bad" onClick={() => awardTeamPoints("A", -1)}>-1</button>
           </div>
           <div className="answer-row">
             <div style={{ flex: 1, fontWeight: 600 }}>{teamNames.B || "Team B"}</div>
             <div style={{ width: 60, textAlign: "center", fontWeight: 700 }}>{teamScores.B || 0} pts</div>
-            <button className="btn-good" onClick={() => awardTeamPoints("B", 1)}>+1</button>
-            <button className="btn-bad" onClick={() => awardTeamPoints("B", -1)}>-1</button>
           </div>
           <button className="btn-secondary" onClick={() => resetTeamScores()} style={{ marginTop: 12 }}>Reset Scores</button>
         </div>
 
         <div className="card">
+          <p className="card-label">Captain Ordering</p>
+          <p style={{ color: "var(--muted)", fontSize: 13 }}>
+            Once all rounds are done, each captain ranks their own team on their phone for bonus placement points -
+            the winning captain picks who on their team gets the highest points, then the losing captain does the same for their team.
+          </p>
+          <button className="btn-primary" onClick={() => openCaptainOrdering()}>
+            Open Captain Ordering
+          </button>
+          <div style={{ marginTop: 12 }}>
+            <p>
+              {teamNames.A || "Team A"} ({captains.A ? nameFor(captains.A) : "no captain set"}):{" "}
+              {captainOrder.A && captainOrder.A.length ? captainOrder.A.map(nameFor).join(" → ") : "waiting..."}
+            </p>
+            <p>
+              {teamNames.B || "Team B"} ({captains.B ? nameFor(captains.B) : "no captain set"}):{" "}
+              {captainOrder.B && captainOrder.B.length ? captainOrder.B.map(nameFor).join(" → ") : "waiting..."}
+            </p>
+          </div>
+        </div>
+
+        <div className="card">
           <p className="card-label">Finalize Team Battle</p>
           <p style={{ color: "var(--muted)", fontSize: 13 }}>
-            Winning team's players all get the top placement points, the losing team gets the next tier down - same fixed scale as every other game.
+            {teamNames[winningTeam] || `Team ${winningTeam}`} is currently ahead ({teamScores[winningTeam] || 0} vs {teamScores[losingTeam] || 0}) and gets the higher point band; their captain's order goes first, then the other captain's order.
           </p>
           <button
             className="btn-good"
-            disabled={players.length === 0}
+            disabled={!bothOrdersIn}
             onClick={async () => {
-              const teamTiers = buildTeamTiers(players.map((p) => p.id), assignments, teamScores);
-              if (teamTiers.length === 0) return;
-              await finalizeGameScores("guess-the-real-place", teamTiers);
-              await resetTeamScores();
+              const winOrder = captainOrder[winningTeam] || [];
+              const loseOrder = captainOrder[losingTeam] || [];
+              const tiers = [...winOrder.map((id) => [id]), ...loseOrder.map((id) => [id])];
+              if (tiers.length === 0) return;
+              await finalizeGameScores("guess-the-real-place", tiers);
+              await resetRealOrFakeGame();
             }}
           >
             🏆 Finalize & Award Leaderboard Points
           </button>
+          {!bothOrdersIn && <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 8 }}>Waiting for both captains to submit their team order.</p>}
         </div>
       </div>
     );
   }
+
 
   if (game.id === "guess-the-photo") {
     const gpAnswers = guessPhoto?.answers || {};
