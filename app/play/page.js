@@ -416,7 +416,24 @@ export default function PlayPage() {
         <div className="card" style={{ maxWidth: 500, width: "100%" }}>
           <h2 style={{ marginTop: 0 }}>{round1.questionText}</h2>
 
-          {!round1.revealed && round1.answersOpen && !submitted && (
+          {!round1.revealed && round1.answersOpen && !submitted && round1.options && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+              {round1.options.map((opt, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="btn-secondary"
+                  disabled={spectator}
+                  onClick={async () => { await submitRound1Answer(playerId, opt); setSubmitted(true); }}
+                  style={{ textAlign: "left" }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!round1.revealed && round1.answersOpen && !submitted && !round1.options && (
             <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <input
                 type="text"
