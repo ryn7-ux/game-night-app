@@ -8,6 +8,7 @@ import {
   revealRound1,
   awardRound1Points,
   addLeaderboardPoints,
+  listenLeaderboard,
   listenLeaderboardVisible,
   setLeaderboardVisible,
   listenRoundScoresVisible,
@@ -611,6 +612,7 @@ export default function HostPage() {
 function HostControls() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [players, setPlayers] = useState([]);
+  const [leaderboard, setLeaderboard] = useState({});
   const [round1, setRound1] = useState(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState(null);
   const [spellingBee, setSpellingBee] = useState(null);
@@ -781,6 +783,7 @@ function HostControls() {
 
   useEffect(() => {
     const unsubP = listenPlayers(setPlayers);
+    const unsubLB = listenLeaderboard(setLeaderboard);
     const unsubR = listenRound1(setRound1);
     const unsubSB = listenSpellingBee(setSpellingBee);
     const unsubKH = listenKnowHost(setKnowHost);
@@ -792,6 +795,7 @@ function HostControls() {
     const unsubRSV = listenRoundScoresVisible(setRoundScoresVisibleState);
     return () => {
       unsubP();
+      unsubLB();
       unsubR();
       unsubSB();
       unsubKH();
@@ -882,8 +886,8 @@ function HostControls() {
     setWheelChecked({});
   }
 
-  async function handleRemovePlayer(playerId) {
-    await removePlayer(playerId);
+  async function handleRemovePlayer(playerId, wipeLeaderboard) {
+    await removePlayer(playerId, wipeLeaderboard);
     setConfirmRemoveId(null);
   }
 
@@ -1025,10 +1029,28 @@ function HostControls() {
               <Avatar avatarId={p.avatarId} size="sm" />
               <div style={{ flex: 1, fontWeight: 600 }}>{p.name}</div>
               {confirmRemoveId === p.id ? (
-                <div className="form-row" style={{ justifyContent: "flex-end" }}>
-                  <span style={{ color: "var(--muted)", fontSize: 13, alignSelf: "center" }}>Remove {p.name}?</span>
-                  <button className="btn-bad" onClick={() => handleRemovePlayer(p.id)}>Confirm</button>
-                  <button className="btn-secondary" onClick={() => setConfirmRemoveId(null)}>Cancel</button>
+                <div className="form-row" style={{ justifyContent: "flex-end", flexWrap: "wrap" }}>
+                  {(() => {
+                    const lb = leaderboard[p.id] || {};
+                    const hasPoints = Object.values(lb).some((v) => v);
+                    if (!hasPoints) {
+                      return (
+                        <>
+                          <span style={{ color: "var(--muted)", fontSize: 13, alignSelf: "center" }}>Remove {p.name}?</span>
+                          <button className="btn-bad" onClick={() => handleRemovePlayer(p.id, false)}>Confirm</button>
+                          <button className="btn-secondary" onClick={() => setConfirmRemoveId(null)}>Cancel</button>
+                        </>
+                      );
+                    }
+                    return (
+                      <>
+                        <span style={{ color: "var(--muted)", fontSize: 13, alignSelf: "center" }}>{p.name} has leaderboard points - also remove those?</span>
+                        <button className="btn-secondary" onClick={() => handleRemovePlayer(p.id, false)}>Keep score</button>
+                        <button className="btn-bad" onClick={() => handleRemovePlayer(p.id, true)}>Remove + wipe score</button>
+                        <button className="btn-secondary" onClick={() => setConfirmRemoveId(null)}>Cancel</button>
+                      </>
+                    );
+                  })()}
                 </div>
               ) : (
                 <button
