@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { listenPlayers, listenLeaderboard } from "../lib/session";
 import Avatar from "./Avatar";
 
@@ -13,9 +13,32 @@ const LB_GAMES = [
   { id: "who-sent-this", icon: "🕵️" },
 ];
 
+function loadHtml2Canvas() {
+  return new Promise((resolve, reject) => {
+    if (window.html2canvas) {
+      resolve(window.html2canvas);
+      return;
+    }
+    const existing = document.querySelector("script[data-html2canvas]");
+    if (existing) {
+      existing.addEventListener("load", () => resolve(window.html2canvas));
+      existing.addEventListener("error", reject);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+    script.setAttribute("data-html2canvas", "1");
+    script.onload = () => resolve(window.html2canvas);
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
 export default function Leaderboard() {
   const [players, setPlayers] = useState([]);
   const [scores, setScores] = useState({});
+  const [exporting, setExporting] = useState(false);
+  const tableRef = useRef(null);
 
   useEffect(() => {
     const unsubP = listenPlayers(setPlayers);
@@ -26,14 +49,35 @@ export default function Leaderboard() {
     };
   }, []);
 
+  const playedGames = LB_GAMES.filter((g) =>
+    players.some((p) => scores[p.id] && Object.prototype.hasOwnProperty.call(scores[p.id], g.id))
+  );
+
   const rows = players
     .map((p) => {
       const raw = scores[p.id];
       const perGame = raw && typeof raw === "object" ? raw : {};
-      const total = LB_GAMES.reduce((sum, g) => sum + (perGame[g.id] || 0), 0);
+      const total = playedGames.reduce((sum, g) => sum + (perGame[g.id] || 0), 0);
       return { ...p, perGame, total };
     })
     .sort((a, b) => b.total - a.total);
+
+  async function exportImage() {
+    if (!tableRef.current) return;
+    setExporting(true);
+    try {
+      const html2canvas = await loadHtml2Canvas();
+      const canvas = await html2canvas(tableRef.current, { backgroundColor: "#05070f", scale: 2 });
+      const link = document.createElement("a");
+      link.download = "leaderboard.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      // export is a nice-to-have, fail quietly
+    } finally {
+      setExporting(false);
+    }
+  }
 
   if (rows.length === 0) {
     return <p style={{ color: "var(--muted)" }}>No players yet.</p>;
@@ -51,61 +95,68 @@ export default function Leaderboard() {
   const rankFg = (i) => (i <= 2 ? "#161200" : "var(--text)");
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-        <thead>
-          <tr>
-            <th
-              style={{
-                textAlign: "left",
-                padding: "6px 10px",
-                color: "var(--muted)",
-                fontSize: 11,
-                letterSpacing: 0.5,
-                whiteSpace: "nowrap",
-              }}
-            >
-              PLAYER
-            </th>
-            {LB_GAMES.map((g) => (
-              <th key={g.id} style={{ padding: "6px 8px", fontSize: 16 }}>
-                {g.icon}
+    <div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+        <button className="btn-secondary" onClick={exportImage} disabled={exporting} style={{ fontSize: 12 }}>
+          {exporting ? "Exporting..." : "Download as Image"}
+        </button>
+      </div>
+      <div ref={tableRef} style={{ overflowX: "auto", background: "#05070f", padding: 8, borderRadius: 8 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr>
+              <th
+                style={{
+                  textAlign: "left",
+                  padding: "6px 10px",
+                  color: "var(--muted)",
+                  fontSize: 11,
+                  letterSpacing: 0.5,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                PLAYER
               </th>
-            ))}
-            <th
-              style={{
-                padding: "6px 10px",
-                color: "var(--muted)",
-                fontSize: 11,
-                letterSpacing: 0.5,
-                whiteSpace: "nowrap",
-              }}
-            >
-              TOTAL
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={r.id} style={{ background: rankBg(i), color: rankFg(i) }}>
-              <td style={{ padding: "8px 10px", fontWeight: 700, whiteSpace: "nowrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <Avatar avatarId={r.avatarId} size="sm" />
-                  {r.name}
-                </div>
-              </td>
-              {LB_GAMES.map((g) => (
-                <td key={g.id} style={{ textAlign: "center", padding: "8px 4px" }}>
-                  {r.perGame[g.id] || 0}
-                </td>
+              {playedGames.map((g) => (
+                <th key={g.id} style={{ padding: "6px 8px", fontSize: 16 }}>
+                  {g.icon}
+                </th>
               ))}
-              <td style={{ textAlign: "center", padding: "8px 10px", fontWeight: 800 }}>
-                {r.total}
-              </td>
+              <th
+                style={{
+                  padding: "6px 10px",
+                  color: "var(--muted)",
+                  fontSize: 11,
+                  letterSpacing: 0.5,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                TOTAL
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.id} style={{ background: rankBg(i), color: rankFg(i) }}>
+                <td style={{ padding: "8px 10px", fontWeight: 700, whiteSpace: "nowrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Avatar avatarId={r.avatarId} size="sm" />
+                    {r.name}
+                  </div>
+                </td>
+                {playedGames.map((g) => (
+                  <td key={g.id} style={{ textAlign: "center", padding: "8px 4px" }}>
+                    {r.perGame[g.id] || 0}
+                  </td>
+                ))}
+                <td style={{ textAlign: "center", padding: "8px 10px", fontWeight: 800 }}>
+                  {r.total}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
