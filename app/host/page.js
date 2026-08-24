@@ -9,6 +9,9 @@ import {
   awardRound1Points,
   addLeaderboardPoints,
   listenLeaderboard,
+  listenArchives,
+  startNewGame,
+  loadArchivedSession,
   listenLeaderboardVisible,
   setLeaderboardVisible,
   listenRoundScoresVisible,
@@ -613,6 +616,9 @@ function HostControls() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [players, setPlayers] = useState([]);
   const [leaderboard, setLeaderboard] = useState({});
+  const [archives, setArchives] = useState([]);
+  const [showArchives, setShowArchives] = useState(false);
+  const [confirmNewGame, setConfirmNewGame] = useState(false);
   const [round1, setRound1] = useState(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState(null);
   const [spellingBee, setSpellingBee] = useState(null);
@@ -784,6 +790,7 @@ function HostControls() {
   useEffect(() => {
     const unsubP = listenPlayers(setPlayers);
     const unsubLB = listenLeaderboard(setLeaderboard);
+    const unsubArch = listenArchives(setArchives);
     const unsubR = listenRound1(setRound1);
     const unsubSB = listenSpellingBee(setSpellingBee);
     const unsubKH = listenKnowHost(setKnowHost);
@@ -796,6 +803,7 @@ function HostControls() {
     return () => {
       unsubP();
       unsubLB();
+      unsubArch();
       unsubR();
       unsubSB();
       unsubKH();
@@ -899,6 +907,18 @@ function HostControls() {
   function backToGames() {
     setSelectedGame(null);
     setCurrentGame(null);
+  }
+
+  async function handleNewGame() {
+    await startNewGame();
+    setConfirmNewGame(false);
+    setSelectedGame(null);
+  }
+
+  async function handleLoadArchive(id) {
+    await loadArchivedSession(id);
+    setShowArchives(false);
+    setSelectedGame(null);
   }
 
   async function pushSpellingWord(points) {
@@ -1017,6 +1037,34 @@ function HostControls() {
         {playerViewWidget}
         <h1 className="page-title">🎙️ Host Control</h1>
         <p className="page-subtitle">Pick a game to run</p>
+        <div className="card">
+          <p className="card-label">Session</p>
+          <div className="form-row" style={{ flexWrap: "wrap" }}>
+            {!confirmNewGame ? (
+              <button className="btn-bad" onClick={() => setConfirmNewGame(true)}>New Game</button>
+            ) : (
+              <>
+                <span style={{ color: "var(--muted)", fontSize: 13, alignSelf: "center" }}>Save current game and start fresh?</span>
+                <button className="btn-bad" onClick={handleNewGame}>Confirm</button>
+                <button className="btn-secondary" onClick={() => setConfirmNewGame(false)}>Cancel</button>
+              </>
+            )}
+            <button className="btn-secondary" onClick={() => setShowArchives((v) => !v)}>Load Old Game</button>
+          </div>
+          {showArchives && (
+            <div style={{ marginTop: 12 }}>
+              {archives.length === 0 && (
+                <p style={{ color: "var(--muted)", fontSize: 13 }}>No saved games yet.</p>
+              )}
+              {archives.map((a) => (
+                <div key={a.id} className="answer-row">
+                  <div style={{ flex: 1 }}>{a.label}</div>
+                  <button className="btn-good" onClick={() => handleLoadArchive(a.id)}>Load</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="card">
           <p className="card-label">Leaderboard (whole night)</p>
           <Leaderboard />
