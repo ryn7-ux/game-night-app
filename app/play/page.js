@@ -727,7 +727,7 @@ export default function PlayPage() {
           {partnerGame?.questionText ? (
             <>
               <p style={{ fontSize: 18, fontWeight: 600 }}>{partnerGame.questionText}</p>
-              {!partnerGame.revealed && !partnerSubmitted && (
+              {(typeof partnerGame.revealStep !== "number" || partnerGame.revealStep < 0) && !partnerSubmitted && (
                 <form onSubmit={handlePartnerSubmit} style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
                   <input
                     type="text"
@@ -747,9 +747,45 @@ export default function PlayPage() {
                   <button className="btn-primary" type="submit" disabled={spectator}>Submit Both</button>
                 </form>
               )}
-              {(partnerSubmitted || partnerGame.revealed) && (
-                <p style={{ color: "var(--good)" }}>Locked in - waiting for the host to reveal...</p>
-              )}
+                        {partnerSubmitted && (typeof partnerGame.revealStep !== "number" || partnerGame.revealStep < 0) && (
+            <p style={{ color: "var(--good)" }}>Locked in - waiting for the host to reveal...</p>
+          )}
+          {typeof partnerGame.revealStep === "number" && partnerGame.revealStep >= 0 && (
+            <div style={{ marginTop: 14 }}>
+              {(() => {
+                const nameOf = (id) => players.find((p) => p.id === id)?.name || "?";
+                const pgAnswers = partnerGame.answers || {};
+                const pairsArr = Object.entries(partnerGame.pairs || {});
+                const revealStep = partnerGame.revealStep;
+                const pairIndex = Math.floor(revealStep / 4);
+                const subStep = revealStep % 4;
+                const revealDone = pairIndex >= pairsArr.length;
+                return (
+                  <>
+                    {pairsArr.map(([pairId, pair], idx) => {
+                      if (idx > pairIndex) return null;
+                      const aAns = pgAnswers[pair.a] || {};
+                      const bAns = pgAnswers[pair.b] || {};
+                      const isCurrent = idx === pairIndex && !revealDone;
+                      const step = isCurrent ? subStep : 4;
+                      return (
+                        <div key={pairId} style={{ marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--border, #333)" }}>
+                          <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                            {nameOf(pair.a)} + {nameOf(pair.b)}{!isCurrent ? " ✓" : ""}
+                          </div>
+                          <p style={{ margin: "4px 0" }}>{nameOf(pair.a)} said "{aAns.ownAnswer || "-"}"</p>
+                          {step >= 1 && <p style={{ margin: "4px 0" }}>{nameOf(pair.b)} guessed "{bAns.guessAnswer || "-"}"</p>}
+                          {step >= 2 && <p style={{ margin: "4px 0" }}>{nameOf(pair.b)} said "{bAns.ownAnswer || "-"}"</p>}
+                          {step >= 3 && <p style={{ margin: "4px 0" }}>{nameOf(pair.a)} guessed "{aAns.guessAnswer || "-"}"</p>}
+                        </div>
+                      );
+                    })}
+                    {revealDone && <p style={{ color: "var(--muted)" }}>All pairs revealed.</p>}
+                  </>
+                );
+              })()}
+            </div>
+          )}
             </>
           ) : (
             <p style={{ color: "var(--muted)" }}>Waiting for the host to ask a question...</p>
