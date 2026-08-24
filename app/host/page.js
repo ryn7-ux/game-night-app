@@ -42,7 +42,8 @@ import {
   addPartnerPair,
   removePartnerPair,
   setPartnerQuestion,
-  revealPartnerAnswers,
+  startPartnerReveal,
+  advancePartnerReveal,
   awardPartnerMatch,
   listenTeamGame,
   setPlayerTeam,
@@ -921,6 +922,15 @@ function HostControls() {
     setSelectedGame(null);
   }
 
+  async function handlePartnerMatch(playerId) {
+    await awardPartnerMatch(playerId);
+    await advancePartnerReveal();
+  }
+
+  async function handlePartnerNoMatch() {
+    await advancePartnerReveal();
+  }
+
   async function pushSpellingWord(points) {
     if (!spellingWordInput.trim()) return;
     await setSpellingWord(spellingWordInput.trim(), points);
@@ -1659,43 +1669,96 @@ function HostControls() {
           <div className="card">
             <p className="card-label">Current Question</p>
             <p style={{ fontSize: 19, fontWeight: 700, marginTop: 0 }}>{partnerGame.questionText}</p>
-            <button className="btn-primary" onClick={() => revealPartnerAnswers()} style={{ marginBottom: 14 }}>
-              Reveal Answers
-            </button>
-            <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -8, marginBottom: 14 }}>
-              You decide if each guess counts (e.g. "Paris" for "France" still counts) - hit Match to award the point.
-            </p>
-            {Object.entries(pairs).map(([pairId, pair]) => {
-              const aAns = pgAnswers[pair.a] || {};
-              const bAns = pgAnswers[pair.b] || {};
+            {(() => {
+              const revealStep = typeof partnerGame.revealStep === "number" ? partnerGame.revealStep : -1;
+              const pairsArr = Object.entries(pairs);
+              if (revealStep < 0) {
+                return (
+                  <>
+                    <button className="btn-primary" onClick={() => startPartnerReveal()} style={{ marginBottom: 14 }}>
+                      Reveal Answers
+                    </button>
+                    {pairsArr.map(([pairId, pair]) => {
+                      const aAns = pgAnswers[pair.a] || {};
+                      const bAns = pgAnswers[pair.b] || {};
+                      return (
+                        <div key={pairId} style={{ marginBottom: 10 }}>
+                          <div style={{ fontWeight: 700, marginBottom: 4 }}>{nameOf(pair.a)} + {nameOf(pair.b)}</div>
+                          <p style={{ color: "var(--muted)", margin: 0 }}>
+                            {nameOf(pair.a)}: {aAns.ownAnswer && aAns.guessAnswer ? "answered" : "waiting"} · {nameOf(pair.b)}: {bAns.ownAnswer && bAns.guessAnswer ? "answered" : "waiting"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </>
+                );
+              }
+              const pairIndex = Math.floor(revealStep / 4);
+              const subStep = revealStep % 4;
+              const revealDone = pairIndex >= pairsArr.length;
               return (
-                <div key={pairId} style={{ marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--border, #333)" }}>
-                  <div style={{ fontWeight: 700, marginBottom: 6 }}>{nameOf(pair.a)} + {nameOf(pair.b)}</div>
-                  {!partnerGame.revealed ? (
-                    <p style={{ color: "var(--muted)", margin: 0 }}>
-                      {nameOf(pair.a)}: {aAns.own && aAns.guess ? "answered" : "waiting"} · {nameOf(pair.b)}: {bAns.own && bAns.guess ? "answered" : "waiting"}
-                    </p>
-                  ) : (
-                    <>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
-                        <p style={{ margin: 0, flex: 1 }}>
-                          {nameOf(pair.a)} said "{aAns.own || "-"}", guessed "{aAns.guess || "-"}"
-                        </p>
-                        <button className="btn-good" onClick={() => awardPartnerMatch(pair.a)}>Match ✓</button>
-                        <button className="btn-bad">No Match</button>
+                <>
+                  <p style={{ fontSize: 12, marginBottom: 14 }}>
+                    You decide if each guess counts (e.g. "Paris" for "France" still counts) - hit Match to award the point.
+                  </p>
+                  {pairsArr.map(([pairId, pair], idx) => {
+                    if (idx > pairIndex) return null;
+                    const aAns = pgAnswers[pair.a] || {};
+                    const bAns = pgAnswers[pair.b] || {};
+                    const isCurrent = idx === pairIndex && !revealDone;
+                    const step = isCurrent ? subStep : 4;
+                    return (
+                      <div key={pairId} style={{ marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--border, #333)" }}>
+                        <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                          {nameOf(pair.a)} + {nameOf(pair.b)}{!isCurrent ? " ✓" : ""}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+                          <p style={{ margin: 0, flex: 1 }}>{nameOf(pair.a)} said "{aAns.ownAnswer || "-"}"</p>
+                        </div>
+                        {step >= 1 && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+                            <p style={{ margin: 0, flex: 1 }}>{nameOf(pair.b)} guessed "{bAns.guessAnswer || "-"}"</p>
+                            {step === 1 && (
+                              <>
+                                <button className="btn-good" onClick={() => handlePartnerMatch(pair.b)}>Match ✓</button>
+                                <button className="btn-bad" onClick={() => handlePartnerNoMatch()}>No Match</button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {step >= 2 && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+                            <p style={{ margin: 0, flex: 1 }}>{nameOf(pair.b)} said "{bAns.ownAnswer || "-"}"</p>
+                          </div>
+                        )}
+                        {step >= 3 && (
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
+                            <p style={{ margin: 0, flex: 1 }}>{nameOf(pair.a)} guessed "{aAns.guessAnswer || "-"}"</p>
+                            {step === 3 && (
+                              <>
+                                <button className="btn-good" onClick={() => handlePartnerMatch(pair.a)}>Match ✓</button>
+                                <button className="btn-bad" onClick={() => handlePartnerNoMatch()}>No Match</button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                        {isCurrent && step === 0 && (
+                          <button className="btn-primary" onClick={() => advancePartnerReveal()} style={{ marginTop: 6 }}>
+                            Reveal {nameOf(pair.b)}'s Guess
+                          </button>
+                        )}
+                        {isCurrent && step === 2 && (
+                          <button className="btn-primary" onClick={() => advancePartnerReveal()} style={{ marginTop: 6 }}>
+                            Reveal {nameOf(pair.a)}'s Guess
+                          </button>
+                        )}
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
-                        <p style={{ margin: 0, flex: 1 }}>
-                          {nameOf(pair.b)} said "{bAns.own || "-"}", guessed "{bAns.guess || "-"}"
-                        </p>
-                        <button className="btn-good" onClick={() => awardPartnerMatch(pair.b)}>Match ✓</button>
-                        <button className="btn-bad">No Match</button>
-                      </div>
-                    </>
-                  )}
-                </div>
+                    );
+                  })}
+                  {revealDone && <p style={{ color: "var(--muted)" }}>All pairs revealed.</p>}
+                </>
               );
-            })}
+            })()}
           </div>
         )}
 
