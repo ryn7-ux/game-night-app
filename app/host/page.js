@@ -1633,14 +1633,14 @@ function HostControls() {
                         <p style={{ margin: 0, flex: 1 }}>
                           {nameOf(pair.a)} said "{aAns.own || "-"}", guessed "{aAns.guess || "-"}"
                         </p>
-                        <button className="btn-good" onClick={() => awardPartnerMatch(pair.a, pair.b)}>Match ✓</button>
+                        <button className="btn-good" onClick={() => awardPartnerMatch(pair.a)}>Match ✓</button>
                         <button className="btn-bad">No Match</button>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0" }}>
                         <p style={{ margin: 0, flex: 1 }}>
                           {nameOf(pair.b)} said "{bAns.own || "-"}", guessed "{bAns.guess || "-"}"
                         </p>
-                        <button className="btn-good" onClick={() => awardPartnerMatch(pair.a, pair.b)}>Match ✓</button>
+                        <button className="btn-good" onClick={() => awardPartnerMatch(pair.b)}>Match ✓</button>
                         <button className="btn-bad">No Match</button>
                       </div>
                     </>
