@@ -68,6 +68,7 @@ import {
   revealWhoSent,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
+import CasinoHost from "../../components/CasinoHost";
 import Avatar from "../../components/Avatar";
 import { AVATARS } from "../../lib/avatars";
 
@@ -1075,6 +1076,7 @@ function HostControls() {
             </div>
           )}
         </div>
+        <CasinoHost />
         <div className="card">
           <p className="card-label">Leaderboard (whole night)</p>
           <Leaderboard />
