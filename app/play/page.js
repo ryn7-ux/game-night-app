@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import CasinoOverlay from "../../components/CasinoOverlay";
 import {
   getPlayerId,
   listenRound1,
@@ -312,6 +313,7 @@ export default function PlayPage() {
 
   return (
     <div className="center-screen">
+      <CasinoOverlay />
       {spectator && (
         <div
           style={{
