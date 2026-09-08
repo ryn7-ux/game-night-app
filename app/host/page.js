@@ -63,6 +63,10 @@ import {
   startGuessPhoto,
   setGuessPhotoBlur,
   revealGuessPhoto,
+  listenWhoSentBank,
+  addWhoSentBankEntry,
+  removeWhoSentBankEntry,
+  markWhoSentBankUsed,
   listenWhoSent,
   setWhoSentImage,
   revealWhoSent,
@@ -658,6 +662,9 @@ function HostControls() {
   const [whoSent, setWhoSent] = useState(null);
   const [whoSentImageUrl, setWhoSentImageUrl] = useState("");
   const [whoSentSenderId, setWhoSentSenderId] = useState("");
+  const [whoSentBank, setWhoSentBank] = useState({});
+  const [bankSenderName, setBankSenderName] = useState("");
+  const [bankUploading, setBankUploading] = useState(false);
 
   const [showPlayerView, setShowPlayerView] = useState(false);
   const [leaderboardVisible, setLeaderboardVisibleState] = useState(false);
@@ -1017,6 +1024,66 @@ function HostControls() {
     if (!guessPhotoAvatarId) return;
     const avatar = AVATARS.find((a) => a.id === guessPhotoAvatarId);
     await startGuessPhoto(guessPhotoAvatarId, avatar ? avatar.name : "");
+  }
+
+  useEffect(() => {
+    const unsubBank = listenWhoSentBank(setWhoSentBank);
+    return () => unsubBank && unsubBank();
+  }, []);
+
+  function resizeImageToDataUrl(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = () => {
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > height && width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleBankUpload(file) {
+    if (!file || !bankSenderName.trim()) return;
+    setBankUploading(true);
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, 900, 0.72);
+      await addWhoSentBankEntry(dataUrl, bankSenderName.trim());
+    } finally {
+      setBankUploading(false);
+    }
+  }
+
+  async function handlePushBankEntry(key, entry) {
+    const match = players.find(
+      (p) => p.name.trim().toLowerCase() === entry.senderName.trim().toLowerCase()
+    );
+    if (!match) {
+      alert(`No player named "${entry.senderName}" found - add them first or push manually.`);
+      return;
+    }
+    await setWhoSentImage(entry.imageUrl, match.id);
+    await markWhoSentBankUsed(key);
+  }
+
+  async function handleDeleteBankEntry(key) {
+    await removeWhoSentBankEntry(key);
   }
 
   async function pushWhoSentImage() {
@@ -2103,6 +2170,52 @@ function HostControls() {
               {players.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             <button className="btn-primary" onClick={pushWhoSentImage}>Post Image</button>
+          </div>
+        </div>
+
+        <div className="card">
+          <p className="card-label">Photo Bank</p>
+          <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
+            Upload photos ahead of time - pick a file, type who sent it, and it's staged and ready to push live later.
+          </p>
+          <input
+            type="text"
+            placeholder="Sender name"
+            value={bankSenderName}
+            onChange={(e) => setBankSenderName(e.target.value)}
+            style={{ width: "100%", marginBottom: 10 }}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            disabled={bankUploading || !bankSenderName.trim()}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleBankUpload(file);
+              e.target.value = "";
+            }}
+            style={{ marginBottom: 10 }}
+          />
+          {bankUploading && <p style={{ color: "var(--muted)", fontSize: 12 }}>Uploading...</p>}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
+            {Object.entries(whoSentBank || {}).map(([key, entry]) => (
+              <div key={key} style={{ width: 100 }}>
+                <img
+                  src={entry.imageUrl}
+                  alt={entry.senderName}
+                  style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 6, opacity: entry.used ? 0.4 : 1 }}
+                />
+                <p style={{ fontSize: 11, margin: "4px 0 2px", textAlign: "center" }}>{entry.senderName}</p>
+                <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+                  <button className="btn-primary" style={{ fontSize: 10, padding: "2px 6px" }} onClick={() => handlePushBankEntry(key, entry)}>
+                    Push
+                  </button>
+                  <button className="btn-bad" style={{ fontSize: 10, padding: "2px 6px" }} onClick={() => handleDeleteBankEntry(key)}>
+                    X
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
