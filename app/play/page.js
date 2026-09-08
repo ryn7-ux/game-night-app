@@ -23,6 +23,8 @@ import {
   submitGuessPhotoAnswer,
   listenWhoSent,
   submitWhoSentGuess,
+  listenGuessClue,
+  submitGuessClueGuess,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 import Avatar from "../../components/Avatar";
@@ -69,6 +71,10 @@ export default function PlayPage() {
   const [whoSentGuess, setWhoSentGuess] = useState("");
   const [whoSentSubmitted, setWhoSentSubmitted] = useState(false);
 
+  const [guessClue, setGuessClue] = useState(null);
+  const [guessClueGuess, setGuessClueGuess] = useState("");
+  const [guessClueSubmitted, setGuessClueSubmitted] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const isSpectator = params.get("spectator") === "1";
@@ -90,6 +96,7 @@ export default function PlayPage() {
     const unsubTG = listenTeamGame(setTeamGame);
     const unsubGP = listenGuessPhoto(setGuessPhoto);
     const unsubWS = listenWhoSent(setWhoSent);
+    const unsubGC = listenGuessClue(setGuessClue);
     const unsubSelf = id
       ? listenSelfPlayer(id, (exists) => {
           if (exists) {
@@ -111,6 +118,7 @@ export default function PlayPage() {
       unsubTG();
       unsubGP();
       unsubWS();
+      unsubGC();
       unsubSelf();
     };
   }, []);
@@ -148,6 +156,11 @@ export default function PlayPage() {
     setWhoSentSubmitted(false);
     setWhoSentGuess("");
   }, [whoSent?.imageUrl]);
+
+  useEffect(() => {
+    setGuessClueSubmitted(false);
+    setGuessClueGuess("");
+  }, [guessClue?.startedAt]);
 
   useEffect(() => {
     setCaptainOrderSubmitted(false);
@@ -268,6 +281,13 @@ export default function PlayPage() {
     if (!whoSentGuess || !playerId) return;
     await submitWhoSentGuess(playerId, whoSentGuess);
     setWhoSentSubmitted(true);
+  }
+
+  async function handleGuessClueSubmit(e) {
+    e.preventDefault();
+    if (!guessClueGuess.trim() || !playerId) return;
+    await submitGuessClueGuess(playerId, guessClueGuess.trim());
+    setGuessClueSubmitted(true);
   }
 
   const myTeam = teamGame?.assignments?.[playerId];
@@ -920,6 +940,50 @@ export default function PlayPage() {
             </>
           ) : (
             <p style={{ color: "var(--muted)" }}>Waiting for the host to post an image...</p>
+          )}
+        </div>
+      )}
+
+      {guessClue && (
+        <div className="card" style={{ maxWidth: 500, width: "100%", textAlign: "center" }}>
+          <p style={{ fontWeight: 600, marginBottom: 8 }}>Guess Who</p>
+          <p style={{ marginBottom: 10 }}>{guessClue.question}</p>
+          <p style={{ fontStyle: "italic", marginBottom: 16 }}>&ldquo;{guessClue.answerText}&rdquo;</p>
+
+          {!guessClue.revealed && !guessClueSubmitted && (
+            <form
+              onSubmit={handleGuessClueSubmit}
+              style={{ display: "flex", flexDirection: "column", gap: 8 }}
+            >
+              <input
+                type="text"
+                placeholder="Who is this describing?"
+                value={guessClueGuess}
+                onChange={(e) => setGuessClueGuess(e.target.value)}
+                style={{ width: "100%" }}
+              />
+              <button className="btn-good" type="submit" disabled={!guessClueGuess.trim()}>
+                Lock In Guess
+              </button>
+            </form>
+          )}
+
+          {!guessClue.revealed && guessClueSubmitted && (
+            <p style={{ color: "var(--muted)" }}>
+              Guess locked in: &ldquo;{guessClueGuess}&rdquo;. Waiting for the reveal...
+            </p>
+          )}
+
+          {guessClue.revealed && (
+            <p>
+              It was <strong>{guessClue.subjectName}</strong>!
+              {guessClueSubmitted && (
+                <>
+                  <br />
+                  Your guess: &ldquo;{guessClueGuess}&rdquo;
+                </>
+              )}
+            </p>
           )}
         </div>
       )}
