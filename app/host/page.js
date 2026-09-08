@@ -67,6 +67,16 @@ import {
   addWhoSentBankEntry,
   removeWhoSentBankEntry,
   markWhoSentBankUsed,
+  listenGuessClue,
+  pushGuessClue,
+  submitGuessClueGuess,
+  markGuessClueCorrect,
+  revealGuessClue,
+  clearGuessClue,
+  listenGuessClueBank,
+  addGuessClueBankEntry,
+  removeGuessClueBankEntry,
+  markGuessClueBankUsed,
   listenWhoSent,
   setWhoSentImage,
   revealWhoSent,
@@ -667,6 +677,12 @@ function HostControls() {
   const [bankUploading, setBankUploading] = useState(false);
   const [bankUploadProgress, setBankUploadProgress] = useState("");
 
+  const [guessClue, setGuessClue] = useState(null);
+  const [guessClueBank, setGuessClueBank] = useState({});
+  const [clueQuestion, setClueQuestion] = useState("");
+  const [clueAnswerText, setClueAnswerText] = useState("");
+  const [clueSubjectName, setClueSubjectName] = useState("");
+
   const [showPlayerView, setShowPlayerView] = useState(false);
   const [leaderboardVisible, setLeaderboardVisibleState] = useState(false);
   const [roundScoresVisible, setRoundScoresVisibleState] = useState(false);
@@ -1032,6 +1048,15 @@ function HostControls() {
     return () => unsubBank && unsubBank();
   }, []);
 
+  useEffect(() => {
+    const unsubClue = listenGuessClue(setGuessClue);
+    const unsubClueBank = listenGuessClueBank(setGuessClueBank);
+    return () => {
+      unsubClue && unsubClue();
+      unsubClueBank && unsubClueBank();
+    };
+  }, []);
+
   function resizeImageToDataUrl(file, maxDim, quality) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -1092,7 +1117,36 @@ function HostControls() {
     await removeWhoSentBankEntry(key);
   }
 
-  async function pushWhoSentImage() {
+async function handleAddClueBankEntry() {
+    if (!clueQuestion.trim() || !clueAnswerText.trim() || !clueSubjectName.trim()) return;
+    await addGuessClueBankEntry(clueQuestion.trim(), clueAnswerText.trim(), clueSubjectName.trim());
+    setClueQuestion("");
+    setClueAnswerText("");
+    setClueSubjectName("");
+  }
+
+  async function handlePushClueBankEntry(key, entry) {
+    await pushGuessClue(entry.question, entry.answerText, entry.subjectName);
+    await markGuessClueBankUsed(key);
+  }
+
+  async function handleDeleteClueBankEntry(key) {
+    await removeGuessClueBankEntry(key);
+  }
+
+  async function handleToggleClueCorrect(playerId, current) {
+    await markGuessClueCorrect(playerId, !current);
+  }
+
+  async function handleRevealGuessClue() {
+    await revealGuessClue();
+  }
+
+  async function handleClearGuessClue() {
+    await clearGuessClue();
+  }
+
+    async function pushWhoSentImage() {
     if (!whoSentImageUrl.trim() || !whoSentSenderId) return;
     await setWhoSentImage(whoSentImageUrl.trim(), whoSentSenderId);
     setWhoSentImageUrl("");
@@ -2244,7 +2298,142 @@ function HostControls() {
           </div>
         </div>
 
-        {whoSent?.imageUrl && (
+        <div className="card">
+        <p style={{ fontWeight: 600, marginBottom: 6 }}>Guess Who — Round 2 Clues</p>
+        <p style={{ color: "var(--muted)", fontSize: 12, marginTop: -6, marginBottom: 10 }}>
+          Stage a question, a friend's answer, and who it's actually about. Push one live when you're ready.
+        </p>
+        <input
+          type="text"
+          placeholder="Question (e.g. If you had to explain this person to a character...)"
+          value={clueQuestion}
+          onChange={(e) => setClueQuestion(e.target.value)}
+          style={{ marginBottom: 6, width: "100%" }}
+        />
+        <textarea
+          placeholder="Friend's answer"
+          value={clueAnswerText}
+          onChange={(e) => setClueAnswerText(e.target.value)}
+          style={{ marginBottom: 6, width: "100%", minHeight: 60 }}
+        />
+        <input
+          type="text"
+          placeholder="Who this is actually about (answer key)"
+          value={clueSubjectName}
+          onChange={(e) => setClueSubjectName(e.target.value)}
+          style={{ marginBottom: 10, width: "100%" }}
+        />
+        <button
+          className="btn-good"
+          disabled={!clueQuestion.trim() || !clueAnswerText.trim() || !clueSubjectName.trim()}
+          onClick={handleAddClueBankEntry}
+        >
+          Add to Bank
+        </button>
+
+        <div style={{ marginTop: 14 }}>
+          {Object.keys(guessClueBank).length === 0 && (
+            <p style={{ color: "var(--muted)", fontSize: 12 }}>No clues staged yet.</p>
+          )}
+          {Object.entries(guessClueBank)
+            .sort((a, b) => (a[1].addedAt || 0) - (b[1].addedAt || 0))
+            .map(([key, entry]) => (
+              <div
+                key={key}
+                style={{
+                  border: "1px solid #333",
+                  borderRadius: 8,
+                  padding: 8,
+                  marginBottom: 8,
+                  opacity: entry.used ? 0.5 : 1,
+                }}
+              >
+                <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{entry.question}</p>
+                <p style={{ fontSize: 12, marginBottom: 2 }}>&ldquo;{entry.answerText}&rdquo;</p>
+                <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>
+                  Answer: {entry.subjectName}
+                  {entry.used ? " (used)" : ""}
+                </p>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    className="btn-good"
+                    style={{ fontSize: 11, padding: "3px 8px" }}
+                    onClick={() => handlePushClueBankEntry(key, entry)}
+                  >
+                    Push Live
+                  </button>
+                  <button
+                    className="btn-bad"
+                    style={{ fontSize: 11, padding: "3px 8px" }}
+                    onClick={() => handleDeleteClueBankEntry(key)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      {guessClue && (
+        <div className="card">
+          <p style={{ fontWeight: 600, marginBottom: 6 }}>Guess Who — Live Clue</p>
+          <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{guessClue.question}</p>
+          <p style={{ fontSize: 13, marginBottom: 8 }}>&ldquo;{guessClue.answerText}&rdquo;</p>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
+            Correct answer: <strong>{guessClue.subjectName}</strong>
+          </p>
+
+          <p style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Guesses:</p>
+          {players.map((p) => {
+            const guess = guessClue.guesses ? guessClue.guesses[p.id] : null;
+            const isCorrect = !!(guessClue.correct && guessClue.correct[p.id]);
+            return (
+              <div
+                key={p.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "4px 0",
+                  borderBottom: "1px solid #333",
+                }}
+              >
+                <span style={{ fontSize: 12 }}>
+                  {p.name}:{" "}
+                  {guess ? (
+                    `"${guess}"`
+                  ) : (
+                    <em style={{ color: "var(--muted)" }}>no guess yet</em>
+                  )}
+                </span>
+                <button
+                  className={isCorrect ? "btn-good" : "btn-bad"}
+                  style={{ fontSize: 11, padding: "3px 8px" }}
+                  onClick={() => handleToggleClueCorrect(p.id, isCorrect)}
+                >
+                  {isCorrect ? "Correct" : "Mark Correct"}
+                </button>
+              </div>
+            );
+          })}
+
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            {!guessClue.revealed ? (
+              <button className="btn-good" onClick={handleRevealGuessClue}>
+                Reveal &amp; Award Points
+              </button>
+            ) : (
+              <p style={{ fontSize: 12, color: "var(--muted)" }}>Revealed.</p>
+            )}
+            <button className="btn-bad" onClick={handleClearGuessClue}>
+              Clear Clue
+            </button>
+          </div>
+        </div>
+      )}
+
+      {whoSent?.imageUrl && (
           <>
             <div className="card" style={{ textAlign: "center" }}>
               <p className="card-label">Current Image</p>
