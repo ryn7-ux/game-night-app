@@ -665,6 +665,7 @@ function HostControls() {
   const [whoSentBank, setWhoSentBank] = useState({});
   const [bankSenderName, setBankSenderName] = useState("");
   const [bankUploading, setBankUploading] = useState(false);
+  const [bankUploadProgress, setBankUploadProgress] = useState("");
 
   const [showPlayerView, setShowPlayerView] = useState(false);
   const [leaderboardVisible, setLeaderboardVisibleState] = useState(false);
@@ -1059,14 +1060,19 @@ function HostControls() {
     });
   }
 
-  async function handleBankUpload(file) {
-    if (!file || !bankSenderName.trim()) return;
+  async function handleBankUpload(fileList) {
+    const files = Array.from(fileList || []).filter((f) => f && f.type && f.type.startsWith("image/"));
+    if (!files.length || !bankSenderName.trim()) return;
     setBankUploading(true);
     try {
-      const dataUrl = await resizeImageToDataUrl(file, 900, 0.72);
-      await addWhoSentBankEntry(dataUrl, bankSenderName.trim());
+      for (let i = 0; i < files.length; i++) {
+        setBankUploadProgress(`Uploading ${i + 1} of ${files.length}...`);
+        const dataUrl = await resizeImageToDataUrl(files[i], 900, 0.72);
+        await addWhoSentBankEntry(dataUrl, bankSenderName.trim());
+      }
     } finally {
       setBankUploading(false);
+      setBankUploadProgress("");
     }
   }
 
@@ -2188,15 +2194,34 @@ function HostControls() {
           <input
             type="file"
             accept="image/*"
+            multiple
             disabled={bankUploading || !bankSenderName.trim()}
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleBankUpload(file);
+              const files = e.target.files;
+              if (files && files.length) handleBankUpload(files);
               e.target.value = "";
             }}
-            style={{ marginBottom: 10 }}
+            style={{ marginBottom: 6 }}
           />
-          {bankUploading && <p style={{ color: "var(--muted)", fontSize: 12 }}>Uploading...</p>}
+          <br />
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            webkitdirectory=""
+            directory=""
+            disabled={bankUploading || !bankSenderName.trim()}
+            onChange={(e) => {
+              const files = e.target.files;
+              if (files && files.length) handleBankUpload(files);
+              e.target.value = "";
+            }}
+            style={{ marginBottom: 4 }}
+          />
+          <p style={{ color: "var(--muted)", fontSize: 11, marginTop: -2, marginBottom: 10 }}>
+            Top picker: select multiple photos at once (ctrl/cmd-click or shift-click). Bottom picker: select an entire folder - every photo inside gets uploaded under the sender name above.
+          </p>
+          {bankUploading && <p style={{ color: "var(--muted)", fontSize: 12 }}>{bankUploadProgress || "Uploading..."}</p>}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
             {Object.entries(whoSentBank || {}).map(([key, entry]) => (
               <div key={key} style={{ width: 100 }}>
