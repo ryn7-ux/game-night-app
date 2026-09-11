@@ -1202,6 +1202,18 @@ async function handleAddClueBankEntry() {
               ))}
             </div>
           )}
+          <div className="form-row" style={{ flexWrap: "wrap", marginTop: 10 }}>
+            <button
+              className="btn-good"
+              onClick={() => {
+                const link = window.location.origin + "/join";
+                navigator.clipboard.writeText(link);
+                alert("Join link copied: " + link);
+              }}
+            >
+              Copy Join Link
+            </button>
+          </div>
         </div>
         <CasinoHost />
         <div className="card">
