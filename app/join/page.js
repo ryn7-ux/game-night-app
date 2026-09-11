@@ -1,7 +1,14 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { joinAsPlayer } from "../../lib/session";
+import {
+  joinAsPlayer,
+  getPlayerId,
+  playerExists,
+  getOrCreateGameCode,
+  getStoredGameCode,
+  setStoredGameCode,
+} from "../../lib/session";
 import { AVATARS } from "../../lib/avatars";
 import Avatar from "../../components/Avatar";
 
@@ -11,12 +18,45 @@ export default function JoinPage() {
       const [loading, setLoading] = useState(false);
       const router = useRouter();
 
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const id = getPlayerId();
+      if (!id) {
+        setChecking(false);
+        return;
+      }
+      const currentCode = await getOrCreateGameCode();
+      const storedCode = getStoredGameCode();
+      if (storedCode && storedCode !== currentCode) {
+        setChecking(false);
+        return;
+      }
+      const alreadyIn = await playerExists(id);
+      if (alreadyIn) {
+        setStoredGameCode(currentCode);
+        router.push("/play");
+        return;
+      }
+      setChecking(false);
+    })();
+  }, []);
+
   async function handleJoin(e) {
           e.preventDefault();
           if (!name.trim() || !avatarId) return;
           setLoading(true);
           await joinAsPlayer(name.trim(), avatarId);
           router.push("/play");
+  }
+
+  if (checking) {
+    return (
+      <div className="center-screen">
+        <p>Loading...</p>
+      </div>
+    );
   }
 
   return (
