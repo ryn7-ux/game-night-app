@@ -25,6 +25,9 @@ import {
   submitWhoSentGuess,
   listenGuessClue,
   submitGuessClueGuess,
+  getOrCreateGameCode,
+  getStoredGameCode,
+  setStoredGameCode,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 import Avatar from "../../components/Avatar";
@@ -85,6 +88,16 @@ export default function PlayPage() {
       return;
     }
     setPlayerId(id);
+    if (id && !isSpectator) {
+      getOrCreateGameCode().then((currentCode) => {
+        const storedCode = getStoredGameCode();
+        if (storedCode && storedCode !== currentCode) {
+          router.push("/join");
+        } else {
+          setStoredGameCode(currentCode);
+        }
+      });
+    }
     const unsub = listenRound1(setRound1);
     const unsubCG = listenCurrentGame(setCurrentGameState);
     const unsubLV = listenLeaderboardVisible(setLeaderboardVisible);
