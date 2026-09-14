@@ -717,6 +717,13 @@ function HostControls() {
       }}
     >
       <button
+        className="btn-secondary"
+        onClick={handleResetViewerScreen}
+        style={{ borderRadius: 999, padding: "10px 18px" }}
+      >
+        🏠 Reset Viewer Screen
+      </button>
+      <button
         className={leaderboardVisible ? "btn-good" : "btn-primary"}
         onClick={() => setLeaderboardVisible(!leaderboardVisible)}
         style={{ borderRadius: 999, padding: "10px 18px" }}
@@ -950,6 +957,19 @@ function HostControls() {
   function backToGames() {
     setSelectedGame(null);
     setCurrentGame(null);
+  }
+
+  // Forces every connected player's screen back to "Waiting for the host to start..."
+  // clearing any leftover overlay (a stale Guess Who clue, pushed leaderboard, or
+  // round-scores banner) from whatever game was last active. Doesn't touch the
+  // host's own screen.
+  async function handleResetViewerScreen() {
+    await Promise.all([
+      setCurrentGame(null),
+      clearGuessClue(),
+      setLeaderboardVisible(false),
+      setRoundScoresVisible(false),
+    ]);
   }
 
   async function handleNewGame() {
