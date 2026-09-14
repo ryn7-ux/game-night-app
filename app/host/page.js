@@ -80,6 +80,8 @@ import {
   listenWhoSent,
   setWhoSentImage,
   revealWhoSent,
+  previewImportFromArchive,
+  applyImportFromArchive,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 import CasinoHost from "../../components/CasinoHost";
@@ -633,6 +635,9 @@ function HostControls() {
   const [players, setPlayers] = useState([]);
   const [leaderboard, setLeaderboard] = useState({});
   const [archives, setArchives] = useState([]);
+  const [importPreview, setImportPreview] = useState(null);
+  const [importDecisions, setImportDecisions] = useState({});
+  const [importing, setImporting] = useState(false);
   const [showArchives, setShowArchives] = useState(false);
   const [confirmNewGame, setConfirmNewGame] = useState(false);
   const [round1, setRound1] = useState(null);
@@ -947,6 +952,51 @@ function HostControls() {
     setSelectedGame(null);
   }
 
+  async function handleStartImport(archiveId) {
+    const preview = await previewImportFromArchive(archiveId);
+    if (!preview) return;
+    const decisions = {};
+    preview.matches.forEach((m) => {
+      decisions[m.oldId] = { action: "merge", newId: m.newId };
+    });
+    preview.unmatched.forEach((u) => {
+      decisions[u.oldId] = { action: "new" };
+    });
+    setImportPreview(preview);
+    setImportDecisions(decisions);
+    setShowArchives(false);
+  }
+
+  function setImportDecision(oldId, decision) {
+    setImportDecisions((prev) => ({ ...prev, [oldId]: decision }));
+  }
+
+  async function handleConfirmImport() {
+    if (!importPreview) return;
+    setImporting(true);
+    const all = [...importPreview.matches, ...importPreview.unmatched];
+    const pairings = all.map((entry) => {
+      const decision = importDecisions[entry.oldId] || { action: "new" };
+      return {
+        oldId: entry.oldId,
+        oldName: entry.oldName,
+        oldAvatarId: entry.oldAvatarId,
+        oldScores: entry.oldScores,
+        action: decision.action,
+        newId: decision.newId,
+      };
+    });
+    await applyImportFromArchive(pairings);
+    setImporting(false);
+    setImportPreview(null);
+    setImportDecisions({});
+  }
+
+  function handleCancelImport() {
+    setImportPreview(null);
+    setImportDecisions({});
+  }
+
   async function handlePartnerMatch(playerId) {
     await awardPartnerMatch(playerId);
     await advancePartnerReveal();
@@ -1198,6 +1248,7 @@ async function handleAddClueBankEntry() {
                 <div key={a.id} className="answer-row">
                   <div style={{ flex: 1 }}>{a.label}</div>
                   <button className="btn-good" onClick={() => handleLoadArchive(a.id)}>Load</button>
+                <button className="btn-secondary" onClick={() => handleStartImport(a.id)}>Import</button>
                 </div>
               ))}
             </div>
@@ -1215,6 +1266,65 @@ async function handleAddClueBankEntry() {
             </button>
           </div>
         </div>
+        {importPreview && (
+                  <div className="card">
+                    <p className="card-label">Import Old Game — Review</p>
+                    <p style={{ color: "var(--muted)", fontSize: 13 }}>
+                      Confirm each pairing below. Scores add on top of whatever this player already has in the current game.
+                    </p>
+                    {importPreview.matches.map((m) => {
+                      const decision = importDecisions[m.oldId] || { action: "merge", newId: m.newId };
+                      return (
+                        <div key={m.oldId} className="answer-row">
+                          <div style={{ flex: 1 }}>
+                            {m.oldName} → {decision.action === "merge" ? m.newName : "New player"}
+                          </div>
+                          {decision.action === "merge" ? (
+                            <button className="btn-secondary" onClick={() => setImportDecision(m.oldId, { action: "new" })}>
+                              Not a match
+                            </button>
+                          ) : (
+                            <button className="btn-secondary" onClick={() => setImportDecision(m.oldId, { action: "merge", newId: m.newId })}>
+                              Merge into {m.newName}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {importPreview.unmatched.map((u) => {
+                      const decision = importDecisions[u.oldId] || { action: "new" };
+                      return (
+                        <div key={u.oldId} className="answer-row" style={{ flexWrap: "wrap" }}>
+                          <div style={{ flex: 1, minWidth: 140 }}>{u.oldName}</div>
+                          <select
+                            value={decision.action === "merge" ? decision.newId : "new"}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "new") {
+                                setImportDecision(u.oldId, { action: "new" });
+                              } else {
+                                setImportDecision(u.oldId, { action: "merge", newId: val });
+                              }
+                            }}
+                          >
+                            <option value="new">New player</option>
+                            {importPreview.currentList.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                Same as {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                    <div className="form-row" style={{ marginTop: 12 }}>
+                      <button className="btn-good" disabled={importing} onClick={handleConfirmImport}>
+                        {importing ? "Importing..." : "Confirm Import"}
+                      </button>
+                      <button className="btn-secondary" onClick={handleCancelImport}>Cancel</button>
+                    </div>
+                  </div>
+                )}
         <CasinoHost />
         <div className="card">
           <p className="card-label">Leaderboard (whole night)</p>
