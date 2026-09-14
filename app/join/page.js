@@ -8,6 +8,8 @@ import {
   getOrCreateGameCode,
   getStoredGameCode,
   setStoredGameCode,
+  findClosestPlayerName,
+  setPlayerId,
 } from "../../lib/session";
 import { AVATARS } from "../../lib/avatars";
 import Avatar from "../../components/Avatar";
@@ -19,6 +21,8 @@ export default function JoinPage() {
       const router = useRouter();
 
   const [checking, setChecking] = useState(true);
+
+  const [matchCandidate, setMatchCandidate] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -44,17 +48,56 @@ export default function JoinPage() {
   }, []);
 
   async function handleJoin(e) {
-          e.preventDefault();
-          if (!name.trim() || !avatarId) return;
-          setLoading(true);
-          await joinAsPlayer(name.trim(), avatarId);
-          router.push("/play");
+    e.preventDefault();
+    if (!name.trim() || !avatarId) return;
+    setLoading(true);
+    const candidate = await findClosestPlayerName(name.trim());
+    if (candidate) {
+      setMatchCandidate(candidate);
+      setLoading(false);
+      return;
+    }
+    await joinAsPlayer(name.trim(), avatarId);
+    router.push("/play");
+  }
+
+  async function handleConfirmResume() {
+    if (!matchCandidate) return;
+    setLoading(true);
+    setPlayerId(matchCandidate.id);
+    const code = await getOrCreateGameCode();
+    setStoredGameCode(code);
+    router.push("/play");
+  }
+
+  async function handleDenyResume() {
+    setMatchCandidate(null);
+    setLoading(true);
+    await joinAsPlayer(name.trim(), avatarId);
+    router.push("/play");
   }
 
   if (checking) {
     return (
       <div className="center-screen">
         <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (matchCandidate) {
+    return (
+      <div className="center-screen">
+        <div className="logo-badge">👋</div>
+        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>Welcome back?</h1>
+        <div style={{ margin: "16px 0" }}>
+          <Avatar avatarId={matchCandidate.avatarId} size="lg" />
+        </div>
+        <p style={{ fontSize: 18, fontWeight: 600 }}>Is this you, {matchCandidate.name}?</p>
+        <div className="form-row">
+          <button className="btn-good" type="button" onClick={handleConfirmResume}>Yes, that's me</button>
+          <button className="btn-secondary" type="button" onClick={handleDenyResume}>No, join as new</button>
+        </div>
       </div>
     );
   }
