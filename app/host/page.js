@@ -640,6 +640,8 @@ function HostControls() {
   const [importing, setImporting] = useState(false);
   const [showArchives, setShowArchives] = useState(false);
   const [confirmNewGame, setConfirmNewGame] = useState(false);
+  const [newGameName, setNewGameName] = useState("");
+  const [showAutoBackups, setShowAutoBackups] = useState(false);
   const [round1, setRound1] = useState(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState(null);
   const [spellingBee, setSpellingBee] = useState(null);
@@ -941,8 +943,9 @@ function HostControls() {
   }
 
   async function handleNewGame() {
-    await startNewGame();
+    await startNewGame(newGameName.trim() || undefined);
     setConfirmNewGame(false);
+    setNewGameName("");
     setSelectedGame(null);
   }
 
@@ -1233,8 +1236,15 @@ async function handleAddClueBankEntry() {
             ) : (
               <>
                 <span style={{ color: "var(--muted)", fontSize: 13, alignSelf: "center" }}>Save current game and start fresh?</span>
+                <input
+                  type="text"
+                  value={newGameName}
+                  onChange={(e) => setNewGameName(e.target.value)}
+                  placeholder="Name this game (optional)"
+                  style={{ minWidth: 160 }}
+                />
                 <button className="btn-bad" onClick={handleNewGame}>Confirm</button>
-                <button className="btn-secondary" onClick={() => setConfirmNewGame(false)}>Cancel</button>
+                <button className="btn-secondary" onClick={() => { setConfirmNewGame(false); setNewGameName(""); }}>Cancel</button>
               </>
             )}
             <button className="btn-secondary" onClick={() => setShowArchives((v) => !v)}>Load Old Game</button>
@@ -1244,11 +1254,28 @@ async function handleAddClueBankEntry() {
               {archives.length === 0 && (
                 <p style={{ color: "var(--muted)", fontSize: 13 }}>No saved games yet.</p>
               )}
-              {archives.map((a) => (
+              {archives.filter((a) => !a.auto).map((a) => (
                 <div key={a.id} className="answer-row">
                   <div style={{ flex: 1 }}>{a.label}</div>
                   <button className="btn-good" onClick={() => handleLoadArchive(a.id)}>Load</button>
                 <button className="btn-secondary" onClick={() => handleStartImport(a.id)}>Import</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <button className="btn-secondary" style={{ marginTop: 8 }} onClick={() => setShowAutoBackups((v) => !v)}>
+            {showAutoBackups ? "Hide" : "Show"} Auto-Backups ({archives.filter((a) => a.auto).length})
+          </button>
+          {showAutoBackups && (
+            <div style={{ marginTop: 12 }}>
+              {archives.filter((a) => a.auto).length === 0 && (
+                <p style={{ color: "var(--muted)", fontSize: 13 }}>No auto-backups yet.</p>
+              )}
+              {archives.filter((a) => a.auto).map((a) => (
+                <div key={a.id} className="answer-row">
+                  <div style={{ flex: 1 }}>{a.label}</div>
+                  <button className="btn-good" onClick={() => handleLoadArchive(a.id)}>Load</button>
+                  <button className="btn-secondary" onClick={() => handleStartImport(a.id)}>Import</button>
                 </div>
               ))}
             </div>
