@@ -85,6 +85,8 @@ import {
   removeArchive,
   trashArchive,
   restoreArchive,
+  archiveCurrentSession,
+  purgeExpiredTrash,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 import CasinoHost from "../../components/CasinoHost";
@@ -641,6 +643,7 @@ function HostControls() {
   const [importPreview, setImportPreview] = useState(null);
   const [importDecisions, setImportDecisions] = useState({});
   const [importing, setImporting] = useState(false);
+  const [importSaveName, setImportSaveName] = useState("");
   const [showArchives, setShowArchives] = useState(false);
   const [confirmNewGame, setConfirmNewGame] = useState(false);
   const [newGameName, setNewGameName] = useState("");
@@ -827,7 +830,10 @@ function HostControls() {
   useEffect(() => {
     const unsubP = listenPlayers(setPlayers);
     const unsubLB = listenLeaderboard(setLeaderboard);
-    const unsubArch = listenArchives(setArchives);
+    const unsubArch = listenArchives((list) => {
+      setArchives(list);
+      purgeExpiredTrash(list);
+    });
     const unsubR = listenRound1(setRound1);
     const unsubSB = listenSpellingBee(setSpellingBee);
     const unsubKH = listenKnowHost(setKnowHost);
@@ -1008,14 +1014,17 @@ function HostControls() {
       };
     });
     await applyImportFromArchive(pairings);
+    await archiveCurrentSession(importSaveName.trim() || undefined, false);
     setImporting(false);
     setImportPreview(null);
     setImportDecisions({});
+    setImportSaveName("");
   }
 
   function handleCancelImport() {
     setImportPreview(null);
     setImportDecisions({});
+    setImportSaveName("");
   }
 
   async function handlePartnerMatch(playerId) {
@@ -1382,6 +1391,14 @@ async function handleAddClueBankEntry() {
                       );
                     })}
                     <div className="form-row" style={{ marginTop: 12 }}>
+                      <input
+                        type="text"
+                        placeholder="Name this merged game (optional)"
+                        value={importSaveName}
+                        onChange={(e) => setImportSaveName(e.target.value)}
+                      />
+</div>
+<div className="form-row" style={{ marginTop: 12 }}>
                       <button className="btn-good" disabled={importing} onClick={handleConfirmImport}>
                         {importing ? "Importing..." : "Confirm Import"}
                       </button>
