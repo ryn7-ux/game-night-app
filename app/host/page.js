@@ -83,6 +83,8 @@ import {
   previewImportFromArchive,
   applyImportFromArchive,
   removeArchive,
+  trashArchive,
+  restoreArchive,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 import CasinoHost from "../../components/CasinoHost";
@@ -643,6 +645,7 @@ function HostControls() {
   const [confirmNewGame, setConfirmNewGame] = useState(false);
   const [newGameName, setNewGameName] = useState("");
   const [showAutoBackups, setShowAutoBackups] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
   const [round1, setRound1] = useState(null);
   const [confirmRemoveId, setConfirmRemoveId] = useState(null);
   const [spellingBee, setSpellingBee] = useState(null);
@@ -957,7 +960,16 @@ function HostControls() {
   }
 
   async function handleDeleteArchive(id) {
-    if (!window.confirm("Delete this saved game permanently? This can't be undone.")) return;
+    if (!window.confirm("Move this saved game to trash? You can restore it later from the Trash section.")) return;
+    await trashArchive(id);
+  }
+
+  async function handleRestoreArchive(id) {
+    await restoreArchive(id);
+  }
+
+  async function handleDeleteForever(id) {
+    if (!window.confirm("Permanently delete this saved game? This can't be undone.")) return;
     await removeArchive(id);
   }
 
@@ -1260,30 +1272,47 @@ async function handleAddClueBankEntry() {
               {archives.length === 0 && (
                 <p style={{ color: "var(--muted)", fontSize: 13 }}>No saved games yet.</p>
               )}
-              {archives.filter((a) => !a.auto).map((a) => (
+              {archives.filter((a) => !a.auto && !a.trashed).map((a) => (
                 <div key={a.id} className="answer-row">
                   <div style={{ flex: 1 }}>{a.label}</div>
                   <button className="btn-good" onClick={() => handleLoadArchive(a.id)}>Load</button>
                 <button className="btn-secondary" onClick={() => handleStartImport(a.id)}>Import</button>
-                  <button className="btn-bad" onClick={() => handleDeleteArchive(a.id)}>Delete</button>
+                  <button className="btn-bad" onClick={() => handleDeleteArchive(a.id)}>Move to Trash</button>
                 </div>
               ))}
             </div>
           )}
           <button className="btn-secondary" style={{ marginTop: 8 }} onClick={() => setShowAutoBackups((v) => !v)}>
-            {showAutoBackups ? "Hide" : "Show"} Auto-Backups ({archives.filter((a) => a.auto).length})
+            {showAutoBackups ? "Hide" : "Show"} Auto-Backups ({archives.filter((a) => a.auto && !a.trashed).length})
           </button>
           {showAutoBackups && (
             <div style={{ marginTop: 12 }}>
-              {archives.filter((a) => a.auto).length === 0 && (
+              {archives.filter((a) => a.auto && !a.trashed).length === 0 && (
                 <p style={{ color: "var(--muted)", fontSize: 13 }}>No auto-backups yet.</p>
               )}
-              {archives.filter((a) => a.auto).map((a) => (
+              {archives.filter((a) => a.auto && !a.trashed).map((a) => (
                 <div key={a.id} className="answer-row">
                   <div style={{ flex: 1 }}>{a.label}</div>
                   <button className="btn-good" onClick={() => handleLoadArchive(a.id)}>Load</button>
                   <button className="btn-secondary" onClick={() => handleStartImport(a.id)}>Import</button>
-                  <button className="btn-bad" onClick={() => handleDeleteArchive(a.id)}>Delete</button>
+                  <button className="btn-bad" onClick={() => handleDeleteArchive(a.id)}>Move to Trash</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <button className="btn-secondary" style={{ marginTop: 8 }} onClick={() => setShowTrash((v) => !v)}>
+            {showTrash ? "Hide" : "Show"} Trash ({archives.filter((a) => a.trashed).length})
+          </button>
+          {showTrash && (
+            <div style={{ marginTop: 12 }}>
+              {archives.filter((a) => a.trashed).length === 0 && (
+                <p style={{ color: "var(--muted)", fontSize: 13 }}>Trash is empty.</p>
+              )}
+              {archives.filter((a) => a.trashed).map((a) => (
+                <div key={a.id} className="answer-row">
+                  <div style={{ flex: 1 }}>{a.label}</div>
+                  <button className="btn-good" onClick={() => handleRestoreArchive(a.id)}>Restore</button>
+                  <button className="btn-bad" onClick={() => handleDeleteForever(a.id)}>Delete Forever</button>
                 </div>
               ))}
             </div>
