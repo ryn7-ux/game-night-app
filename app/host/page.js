@@ -82,6 +82,7 @@ import {
   revealWhoSent,
   previewImportFromArchive,
   applyImportFromArchive,
+  removeArchive,
 } from "../../lib/session";
 import Leaderboard from "../../components/Leaderboard";
 import CasinoHost from "../../components/CasinoHost";
@@ -955,6 +956,11 @@ function HostControls() {
     setSelectedGame(null);
   }
 
+  async function handleDeleteArchive(id) {
+    if (!window.confirm("Delete this saved game permanently? This can't be undone.")) return;
+    await removeArchive(id);
+  }
+
   async function handleStartImport(archiveId) {
     const preview = await previewImportFromArchive(archiveId);
     if (!preview) return;
@@ -1259,6 +1265,7 @@ async function handleAddClueBankEntry() {
                   <div style={{ flex: 1 }}>{a.label}</div>
                   <button className="btn-good" onClick={() => handleLoadArchive(a.id)}>Load</button>
                 <button className="btn-secondary" onClick={() => handleStartImport(a.id)}>Import</button>
+                  <button className="btn-bad" onClick={() => handleDeleteArchive(a.id)}>Delete</button>
                 </div>
               ))}
             </div>
@@ -1276,6 +1283,7 @@ async function handleAddClueBankEntry() {
                   <div style={{ flex: 1 }}>{a.label}</div>
                   <button className="btn-good" onClick={() => handleLoadArchive(a.id)}>Load</button>
                   <button className="btn-secondary" onClick={() => handleStartImport(a.id)}>Import</button>
+                  <button className="btn-bad" onClick={() => handleDeleteArchive(a.id)}>Delete</button>
                 </div>
               ))}
             </div>
